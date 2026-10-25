@@ -24,9 +24,10 @@ export function DemoWorkflow() {
   const market = useH100();
   const heading = useRef<HTMLHeadingElement>(null);
   const booked = netObligations(trades);
-  const valuation = market.observation ? marketScenario(trades, market.observation.value) : null;
-  const shown = market.observation && valuation?.ok
-    ? trades.map(t => t.economics ? deriveObligation({ ...t, economics: { ...t.economics, fixing: market.observation.value } }) : t)
+  const referencePrice = market.observation?.value;
+  const valuation = referencePrice !== undefined ? marketScenario(trades, referencePrice) : null;
+  const shown = referencePrice !== undefined && valuation?.ok
+    ? trades.map(t => t.economics ? deriveObligation({ ...t, economics: { ...t.economics, fixing: referencePrice } }) : t)
     : [];
   const r = valuation ?? { ...netObligations([]), ok: false, error: market.loading ? 'Loading indicative market valuation…' : 'Indicative market valuation unavailable. No fallback calculation is shown.' };
   const direction = r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment needed';
@@ -49,7 +50,7 @@ export function DemoWorkflow() {
         <div className="flex items-center justify-between gap-3"><h3 className="font-mono">{t.id}</h3><span className="text-xs text-muted-foreground">GPU compute forward</span></div>
         <p className="mt-4 font-mono text-xl text-primary">{Number.isFinite(t.amount) ? fmt(t.amount, t.currency) : 'Invalid economics'}</p>
         <p className="mt-2 text-sm">{t.amount === 0 ? 'No cash payment' : `CP-${t.receiver === 'A' ? 'B' : 'A'} pays CP-${t.receiver}`}</p>
-        {t.economics && <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs"><dt className="text-muted-foreground">GPU-hours</dt><dd className="text-right font-mono">{t.economics.quantity.toLocaleString('en-US')}</dd><dt className="text-muted-foreground">Agreed forward price</dt><dd className="text-right font-mono">{fmt(t.economics.strike, t.currency)}</dd><dt className="text-muted-foreground">Published H100 reference</dt><dd className="text-right font-mono">{fmt(t.economics.fixing, t.currency)}</dd></dl>}
+        {t.economics && <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs"><dt className="text-muted-foreground">GPU-hours</dt><dd className="text-right font-mono">{t.economics.quantity.toLocaleString('en-US')}</dd><dt className="text-muted-foreground">Agreed forward price</dt><dd className="text-right font-mono">{fmt(t.economics.strike, t.currency)}</dd><dt className="text-muted-foreground">Published H100 reference</dt><dd className="text-right font-mono">{t.economics.fixing.toFixed(4)} USD</dd></dl>}
         <details className="mt-4"><summary>Advanced Details</summary><p className="mt-3 text-xs text-muted-foreground">{t.economics ? `Long CP-${t.economics.longParty} payoff = GPU-hours × (published H100 reference − agreed forward price). ` : ''}Value date {t.settlementDate ?? 'Not specified'} · {t.eligible === false ? 'Ineligible' : 'Eligible'} · {t.lifecycle ?? 'Captured'}</p></details>
       </article>)}</div>
       <details className="mt-5 border-t border-border pt-4"><summary>Original Illustrative Example</summary>
