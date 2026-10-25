@@ -1,3 +1,8 @@
+# Phase 3 separate Testnet payment
+- [ ] Add fixed 1.0000000 USDC payment review, fresh prerequisites and Freighter signing.
+- [ ] Submit exact signed Testnet transaction, independently verify success and refresh balances without reconciling obligations.
+- [ ] Test safeguards and browser states; document real-extension verification limitations.
+
 # Phase 2 wallet balances and asset validation
 - [x] Share the live Freighter connection across the header and Settlement.
 - [x] Query exact-issuer Testnet balances, reserves, liabilities and beneficiary authorisation.
