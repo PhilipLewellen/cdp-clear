@@ -1,4 +1,7 @@
 # CDP Clear functional workflow
+- [ ] Upgrade Overview cash exposure, counterparty flows and settlement next actions.
+- [ ] Add isolated GPU-price scenarios and calculation tests.
+- [ ] Verify edited figures, scenario isolation and compact layout.
 - [x] Add state-driven operations Overview without moving existing URLs.
 - [x] Derive GPU-forward cash obligations from editable economics; preserve saved edits and dates.
 - [x] Clarify manual testnet settlement and prevent duplicate allocation.
