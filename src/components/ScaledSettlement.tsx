@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, FlaskConical, RefreshCw, Send } from 'lucide-react';
 import { SettlementException } from '@/components/SettlementException';
+import { SettlementEvidence } from '@/components/SettlementEvidence';
 import { Button } from '@/components/ui/button';
 import { useFreighter } from '@/hooks/use-freighter';
 import { useStore } from '@/lib/use-store';
@@ -8,7 +9,7 @@ import { fmt } from '@/lib/netting';
 import { inputCls } from '@/lib/ui-classes';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
 import { testPaymentSession } from '@/lib/test-payment-session';
-import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, verifyScaledInstruction, type ScaledInstruction, type SettlementScale } from '@/lib/scaled-settlement';
+import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateFingerprintedInstruction, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, verifyScaledInstruction, type ScaledInstruction, type SettlementScale } from '@/lib/scaled-settlement';
 import { loadWalletBalances, type WalletBalances } from '@/lib/wallet-balances';
 import { classifyRecovery, isWalletRejection, paymentState, readinessChecks, readyToPay, type Recovery } from '@/lib/settlement-readiness';
 import { prepareScaledPayment, submitScaledPayment, readScaledPayment, paymentError, type PreparedScaledPayment, type ConfirmedScaledPayment } from '@/lib/scaled-payment';
@@ -35,14 +36,20 @@ export function ScaledSettlementCalc() {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const [scale, setScale] = useState<SettlementScale>(DEFAULT_SCALE);
   const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const generationGuard = useRef(false);
   const originalOk = scaledNet(trades, 1);
   const scaled = scaledNet(trades, scale.divisor);
   const ready = originalOk.ok && scaled.ok && scaled.net > 0 && scaled.payer === originalOk.payer;
   const direction = scaled.payer ? `CP-${scaled.payer} pays CP-${scaled.payee}` : 'Fully offset · no payment needed';
-  const generate = () => {
+  const generate = async () => {
+    if (generationGuard.current) return;
+    generationGuard.current = true;
+    setGenerating(true);
     setError('');
-    try { setScaledInstruction(generateScaledInstruction(trades, scale)); }
+    try { setScaledInstruction(await generateFingerprintedInstruction(trades, scale)); }
     catch (e) { setError(e instanceof Error ? e.message : 'Instruction generation unavailable.'); }
+    finally { generationGuard.current = false; setGenerating(false); }
   };
   return <section className="settlement-section mt-6" aria-label="Scaled Stellar Testnet Demonstration">
     <div className="module-heading"><h2>Scaled Stellar Testnet Demonstration</h2><span>1 USD = 1 USDC · illustrative</span></div>
@@ -62,7 +69,7 @@ export function ScaledSettlementCalc() {
       {scaled.net <= 0 && <p className="mt-3 text-xs text-warning">Net obligation is zero at this scale; no payment is required.</p>}
       {scaledInstruction && snapshotUnchanged(scaledInstruction, trades)
         ? <p className="mt-4 text-xs">Instruction <span className="font-mono">{scaledInstruction.id}</span> already exists · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span> — changing the scale never overwrites an existing instruction. Continue to Settle.</p>
-        : <Button className="mt-4" disabled={!ready} onClick={generate}>{scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
+        : <Button className="mt-4" disabled={!ready || generating} onClick={generate}>{generating ? 'Saving financial snapshot…' : scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
       {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
       {scaledInstruction && !snapshotUnchanged(scaledInstruction, trades) && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span><span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span></p>}
     </>}
@@ -297,9 +304,10 @@ export function ScaledSettlementVerify() {
     </dl>
     {instruction.txHash && <a className="mt-3 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect transaction on Stellar Expert ↗</a>}
     <div className="mt-4 flex flex-wrap items-center gap-3">
-      <Button variant="outline" disabled={!canVerify || Boolean(phase)} onClick={verify}><RefreshCw className="size-3.5" />Verify Again</Button>
+      {instruction.status !== 'Reconciled' && <Button variant="outline" disabled={!canVerify || Boolean(phase)} onClick={verify}><RefreshCw className="size-3.5" />Reconcile Payment</Button>}
       {phase && <p role="status" className="text-xs text-primary">{phase}</p>}
     </div>
+    <SettlementEvidence />
     {!canVerify && <p className="mt-3 text-xs text-muted-foreground">Verification becomes available after a payment transaction hash, payer wallet and recipient are recorded for this instruction.</p>}
     <div className="mt-6 border-t border-border pt-4">
       <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
