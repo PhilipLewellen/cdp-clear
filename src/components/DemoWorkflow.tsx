@@ -76,6 +76,14 @@ export function DemoWorkflow() {
       {!r.ok ? <p role="alert" className="text-destructive">{r.error}</p> : <>
         <div className="demo-net-flow"><div><p className="text-xs text-muted-foreground">{trades.length} gross cash obligations</p><p className="mt-2 font-mono text-3xl">{fmt(r.gross, r.currency)}</p></div><ArrowRight className="size-6 text-muted-foreground" aria-hidden="true"/><div><p className="text-xs text-muted-foreground">{r.net > 0 ? 'One net obligation' : 'No net obligation'}</p><p className="mt-2 font-mono text-3xl text-primary">{fmt(r.net, r.currency)}</p><p className="mt-2 font-mono">{direction}</p></div></div>
         <p className="mt-2 text-sm">{trades.length} payments reduced to {r.net > 0 ? 'one' : 'zero'} · {direction}</p>
+        <figure className="mt-5 rounded border border-border bg-card p-4" aria-label="Opposing cash flows offset">
+          <figcaption className="mb-3 text-xs text-muted-foreground">Opposing cash flows offset</figcaption>
+          <div className="grid gap-3 text-xs">
+            <div><p className="flex justify-between gap-3"><span>CP-B → CP-A</span><span className="font-mono">{fmt(r.aReceives, r.currency)}</span></p><progress className="cash-bar gross mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.aReceives} aria-label="Payable to CP-A" /></div>
+            <div><p className="flex justify-between gap-3"><span>CP-A → CP-B</span><span className="font-mono">{fmt(r.bReceives, r.currency)}</span></p><progress className="cash-bar gross mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.bReceives} aria-label="Payable to CP-B" /></div>
+            <div className="border-t border-border pt-3"><p className="flex justify-between gap-3 font-semibold"><span>Net · {direction}</span><span className="font-mono text-primary">{fmt(r.net, r.currency)}</span></p><progress className="cash-bar mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.net} aria-label="Net obligation" /></div>
+          </div>
+        </figure>
         <div className="mt-6 border-y border-border py-5"><p className="font-mono text-2xl text-success">{r.gross ? (r.reduction / r.gross * 100).toFixed(1) : '0.0'}% reduction</p><p className="mt-2 text-sm text-muted-foreground">{fmt(r.reduction, r.currency)} less in gross payment flows. Illustrative contractual amounts, not a blockchain payment.</p></div>
         <details className="mt-5"><summary>Advanced Details · calculation and eligibility</summary><p className="mt-3 font-mono">{fmt(r.aReceives, r.currency)} payable to CP-A − {fmt(r.bReceives, r.currency)} payable to CP-B</p><p className="mt-3 text-xs text-muted-foreground">Assumes the same counterparties, currency, settlement cycle, eligible obligations and an enforceable netting agreement. No novation or CCP guarantee.</p></details>
         <ScaledSettlementCalc />
