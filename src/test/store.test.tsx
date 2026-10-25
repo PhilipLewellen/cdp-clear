@@ -1,6 +1,7 @@
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { StoreProvider, useStore } from '@/lib/store';
+import { StoreProvider } from '@/lib/store';
+import { useStore } from '@/lib/use-store';
 import { netObligations } from '@/lib/netting';
 
 let observed: ReturnType<typeof useStore> | null = null;

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/lib/use-store";
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, RotateCcw } from 'lucide-react';
@@ -55,13 +55,6 @@ export function Tag({ children, tone = "muted" }: { children: ReactNode; tone?: 
   }[tone];
   return <span className={`inline-block text-xs font-medium ${m}`}>{children}</span>;
 }
-
-export const inputCls =
-  "w-full rounded-sm border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground font-mono outline-none focus:border-ring";
-export const btnCls =
-  "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50";
-export const btnGhost =
-  "inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50";
 
 export function Term({ label, meaning }: { label: string; meaning: string }) {
   return <TooltipProvider delayDuration={150}><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" className="h-auto whitespace-normal px-0 text-left text-xs text-muted-foreground">{label}<Info className="size-3 shrink-0" /></Button></TooltipTrigger><TooltipContent className="max-w-xs">{meaning}</TooltipContent></Tooltip></TooltipProvider>;

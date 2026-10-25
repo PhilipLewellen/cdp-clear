@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useRef, useState, type ReactNode } from 'react';
-import { Shell, Tag, Term, inputCls } from '@/components/Shell';
+import { Shell, Tag, Term } from '@/components/Shell';
+import { inputCls } from '@/lib/ui-classes';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2, FilePlus2, Search, ShieldCheck, Trash2 } from 'lucide-react';
-import { useStore, type Instruction } from '@/lib/store';
+import { useStore } from '@/lib/use-store';
 import { fmt, netObligations } from '@/lib/netting';
 import { DEFAULT_ISSUER, NETWORK, verifyTestnetAsset, verifyTestnetPayment, type VerifyResult } from '@/lib/stellar';
-import { LIFECYCLE, obligationSnapshot, publicAddress, reconcileInstruction } from '@/lib/settlement';
+import { LIFECYCLE, obligationSnapshot, publicAddress, reconcileInstruction, type Instruction } from '@/lib/settlement';
 
 export const Route = createFileRoute('/settlement')({
   head: () => ({ meta: [

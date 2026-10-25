@@ -1,20 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SAMPLE_OBLIGATIONS, type Obligation } from "./netting";
 import { LIFECYCLE, type Instruction } from './settlement';
 import { instructionActivity, type ActivityEvent } from './activity';
-export type { Instruction, SettleStatus } from './settlement';
-
-interface Store {
-  trades: Obligation[];
-  setTrades: (t: Obligation[]) => void;
-  instruction: Instruction | null;
-  history: Instruction[];
-  setInstruction: (i: Instruction | null) => void;
-  reset: () => void;
-  activity: ActivityEvent[];
-  recordActivity: (event: Omit<ActivityEvent, 'id' | 'at'>) => void;
-}
-const Ctx = createContext<Store | null>(null);
+import { StoreContext } from './store-context';
 const KEY = "cdp-clear-v1";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -56,10 +44,5 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setActivity([]);
     recordActivity({ category: 'Demo operation', action: 'Demo reset', reference: 'NS-AB-001', detail: 'Three valid eligible sample obligations restored' });
   };
-  return <Ctx.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity }}>{children}</Ctx.Provider>;
+  return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity }}>{children}</StoreContext.Provider>;
 }
-export const useStore = () => {
-  const c = useContext(Ctx);
-  if (!c) throw new Error("StoreProvider missing");
-  return c;
-};

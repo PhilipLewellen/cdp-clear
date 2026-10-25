@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Shell, Tag } from '@/components/Shell';
 import { Button } from '@/components/ui/button';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/lib/use-store';
 
 export const Route = createFileRoute('/activity')({
   head: () => ({ meta: [
