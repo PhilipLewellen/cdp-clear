@@ -4,7 +4,7 @@
 
 Built at HackMeridian Lisbon 2026, representing Nuvanté.
 
-[Live Demo](https://clear-bilateral-settlement.lovable.app/) · [Stellar](https://stellar.org/) · [Freighter](https://www.freighter.app/)
+[Live Demo]([https://clear-bilateral-settlement.lovable.app/)](https://cdpclear.com/) 
 
 ## What is CDP Clear?
 
