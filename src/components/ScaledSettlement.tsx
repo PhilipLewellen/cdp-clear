@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { RefreshCw, Send } from 'lucide-react';
+import { FlaskConical, RefreshCw, Send } from 'lucide-react';
+import { SettlementException } from '@/components/SettlementException';
 import { Button } from '@/components/ui/button';
 import { useFreighter } from '@/hooks/use-freighter';
 import { useStore } from '@/lib/use-store';
@@ -177,6 +178,7 @@ export function ScaledSettlementVerify() {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const allocated = useAllocatedHashes(scaledInstruction?.id);
   const [phase, setPhase] = useState('');
+  const [exceptionOpen, setExceptionOpen] = useState(false);
   const guard = useRef(false);
   const instruction = scaledInstruction;
   if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement verification"><div className="module-heading"><h2>Scaled settlement verification</h2><span>Horizon</span></div><p className="text-sm text-muted-foreground">No scaled settlement instruction exists yet. Generate one in step 2.</p></section>;
