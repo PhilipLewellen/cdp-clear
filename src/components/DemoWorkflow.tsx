@@ -1,17 +1,13 @@
 import { useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Button } from '@/components/ui/button';
-import { TestSettlementPayment } from '@/components/TestSettlementPayment';
-import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
-import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
 import { H100MarketPanel } from '@/components/H100MarketPanel';
 import { ScaledSettlementCalc, ScaledSettlementPayment, ScaledSettlementVerify } from '@/components/ScaledSettlement';
 import { useStore } from '@/lib/use-store';
 import { deriveObligation, fmt, netObligations } from '@/lib/netting';
 import { marketScenario } from '@/lib/h100';
-import { DEFAULT_ISSUER } from '@/lib/stellar';
 
 const labels = ['Calculate', 'Net', 'Settle', 'Verify'] as const;
 const purpose = [
@@ -22,9 +18,8 @@ const purpose = [
 ] as const;
 
 export function DemoWorkflow() {
-  const { trades, testSettlement, scaledInstruction } = useStore();
+  const { trades, scaledInstruction } = useStore();
   const [step, setStep] = useState(0);
-  const [refresh, setRefresh] = useState(0);
   const [scenarioFixing, setScenarioFixing] = useState<number | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const r = netObligations(trades);
@@ -34,14 +29,12 @@ export function DemoWorkflow() {
     ? trades.map(t => t.economics ? deriveObligation({ ...t, economics: { ...t.economics, fixing: scenarioFixing as number } }) : t)
     : trades;
   const shownNet = scenarioMode ? scenario : r;
-  const result = testSettlement?.result;
-  const confirmed = result?.checks.confirmed === true && Boolean(result.confirmedAt);
   const direction = r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment needed';
   const shownDirection = shownNet?.payer ? `CP-${shownNet.payer} → CP-${shownNet.payee}` : 'Fully offset · no payment needed';
   const reconciled = scaledInstruction?.status === 'Reconciled';
   const changeStep = (next: number) => { setStep(next); requestAnimationFrame(() => heading.current?.focus()); };
   const nextLabel = ['Review Netting', scaledInstruction ? 'Continue to Settlement' : 'Next: Settle', 'Next: Verify'][step];
-  return <Shell title="Demo Workflow" intro="Calculate, net and settle AI compute derivatives using USDC on Stellar.">
+  return <Shell title="From derivatives exposure to verified settlement." intro="Calculate GPU compute derivative obligations, reduce payments through bilateral netting, and settle in USDC on Stellar.">
     <ol className="demo-steps" aria-label="Demo steps">{labels.map((label, index) => <li key={label}><Button variant={index === step ? 'default' : 'ghost'} aria-current={index === step ? 'step' : undefined} data-complete={index < step || undefined} onClick={() => changeStep(index)}>{index < step ? <Check className="size-3.5 text-success" aria-hidden="true" /> : <span className="font-mono">{index + 1}.</span>}{label}</Button></li>)}</ol>
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
       <h2 ref={heading} tabIndex={-1} className="demo-step-title">{step + 1}. {labels[step]}</h2>
@@ -91,24 +84,11 @@ export function DemoWorkflow() {
     </section>
 
     <section hidden={step !== 2} aria-label="Settle scaled obligation" className="demo-panel">
-      <ScaledSettlementPayment onSuccess={() => setRefresh(value => value + 1)} onViewVerified={() => changeStep(3)} />
-      <details className="mt-8 border-t border-border pt-5"><summary>Advanced Settlement Tools · historical 1 USDC demonstration</summary>
-        <p className="mb-5 mt-4 text-sm">Historical demonstration: the separate 1 USDC payment below is unrelated to the scaled instruction and demonstrates a real transfer of valueless tokens on Stellar Testnet.</p>
-        <div className="grid gap-5 sm:grid-cols-2"><div className="border-l-2 border-border pl-4"><p className="text-xs text-muted-foreground">Illustrative derivative obligation</p><p className="mt-2 font-mono text-2xl">{r.ok ? fmt(r.net, r.currency) : 'Netting unavailable'}</p><p className="mt-2 text-xs text-muted-foreground">{r.ok ? direction : r.error} · Not discharged by this test</p></div><div className="border-l-2 border-primary pl-4"><p className="text-xs text-muted-foreground">Separate Stellar Testnet payment</p><p className="mt-2 font-mono text-2xl text-primary">1.0000000 USDC</p><p className={`mt-2 text-sm ${confirmed ? 'text-success' : 'text-warning'}`}>{confirmed ? 'Blockchain confirmation verified' : testSettlement?.hash ? 'Existing transaction available · verify in step 4' : 'No existing transaction associated'}</p></div></div>
-        {testSettlement?.hash && <div className="mt-5 border-y border-border py-4"><p className="text-sm">Use the existing transaction — no new payment required.</p><p className="mt-2 break-all font-mono text-xs text-muted-foreground">{testSettlement.hash}</p>{confirmed && <><p className="mt-2 text-xs">Ledger {result?.ledger ?? 'Not recorded'} · Confirmed {result?.confirmedAt}</p><a href={`https://stellar.expert/explorer/testnet/tx/${testSettlement.hash}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-primary underline">Inspect verified transaction ↗</a></>}</div>}
-        <details className="mt-5"><summary>Live wallet balances</summary><WalletSettlementAsset amount={1} source={testSettlement?.source ?? ''} beneficiary={testSettlement?.destination ?? ''} issuer={DEFAULT_ISSUER} refreshVersion={refresh}/></details>
-        <details className="mt-5"><summary>Make a new 1 USDC Testnet payment</summary><TestSettlementPayment guided onSuccess={() => setRefresh(value => value + 1)} /></details>
-        <p className="mt-4 text-xs text-muted-foreground">Freighter connection is shared with the header. Existing payment references and reconciliation records are retained.</p>
-      </details>
+      <ScaledSettlementPayment onViewVerified={() => changeStep(3)} />
     </section>
 
     <section hidden={step !== 3} aria-label="Verify settlement" className="demo-panel">
       <ScaledSettlementVerify />
-      <details className="mt-8 border-t border-border pt-5"><summary>Advanced Verification · historical 1 USDC record</summary>
-        <p className="mb-5 mt-4 text-sm">Historical record: reconciliation below checks the separate 1 USDC payment against its expected sender, recipient, exact amount and USDC issuer — without sending another payment.</p>
-        <TestSettlementReconciliation guided />
-        {result?.status === 'Reconciled' && <p className="mt-5 flex items-start gap-2 text-sm text-success"><CheckCircle2 className="size-4 shrink-0"/>Existing 1 USDC payment matched. The illustrative derivative obligation remains separate.</p>}
-      </details>
       <div className="mt-5 flex flex-wrap gap-3"><Button asChild variant="outline"><Link to="/activity">Full audit log</Link></Button><Button asChild variant="outline"><Link to="/settlement">Advanced settlement operations</Link></Button></div>
     </section>
 
