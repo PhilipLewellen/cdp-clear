@@ -1,3 +1,8 @@
+# Guided live-demo UX
+- [ ] Add prominent Demo Workflow with Calculate → Net → Settle → Verify and Next/Back navigation.
+- [ ] Reuse existing payment and retrospective verification without changing financial logic or saved records; collapse advanced details.
+- [ ] Verify guided navigation, saved-evidence persistence, live read-only verification and original pages.
+
 # Phase 4 retrospective reconciliation
 - [x] Add separate persistent TEST-SETTLEMENT-001 with saved Phase 3 evidence or explicit operator entry.
 - [x] Independently verify all paginated operations, exact fields and allocation; retain actual results and audit times.

@@ -16,6 +16,7 @@
 - Financial obligations and netting are shared in src/lib/netting.ts; instruction lifecycle and snapshot reconciliation live in src/lib/settlement.ts so all pages use the same rules.
 - GPU-forward economics derive cash amounts and direction in the shared financial helper; legacy saved cash rows are upgraded without replacing their saved cash values, dates or eligibility.
 - Overview uses a separate /overview route and preserves / as Obligations so existing links remain valid.
+- The guided presentation lives at /demo and reuses the existing store, payment and reconciliation components; preserve / as Obligations and keep step panels mounted to avoid losing an in-progress payment review on Back/Next.
 - Overview scenario calculations and current-snapshot settlement monitoring live in src/lib/risk-overview.ts; scenarios operate on copied economics and never write booked state, while signed cash deltas preserve meaning across payer reversals.
 - Reconciled obligation snapshots cannot be instructed or allocated twice in the local register; supplying a hash records verification requested rather than network submission.
 - Keep a browser-local reconciled instruction register and reject reused transaction hashes; this protects the demo against duplicate allocation without implying cross-user persistence.
