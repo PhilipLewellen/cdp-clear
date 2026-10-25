@@ -1,3 +1,8 @@
+# Premium institutional visual polish
+- [ ] Refine shared typography, numerical hierarchy, surfaces and control states without touching financial services.
+- [ ] Improve mobile data layouts, focus visibility and touch targets; retain every workflow control.
+- [ ] Verify all routes, four viewport widths, calculations and saved records; no blockchain transactions.
+
 # Final workflow consolidation
 - [x] Keep full market details in Calculate and only the shared valuation basis in Net.
 - [x] Move confirmed scaling/instruction creation to Settle; preserve records and mounted payment review.
