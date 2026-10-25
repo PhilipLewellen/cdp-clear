@@ -1,0 +1,35 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { StoreProvider } from '@/lib/store';
+import { DemoWorkflow } from '@/components/DemoWorkflow';
+import { createTestSettlement, verifyExistingTestPayment } from '@/lib/test-reconciliation';
+import { SAMPLE_OBLIGATIONS } from '@/lib/netting';
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <span>{children}</span> }));
+vi.mock('@/components/Shell', () => ({ Shell: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
+vi.mock('@/components/TestSettlementPayment', () => ({ TestSettlementPayment: () => null }));
+vi.mock('@/components/WalletSettlementAsset', () => ({ WalletSettlementAsset: () => null }));
+vi.mock('@/lib/test-reconciliation', async original => ({ ...await original<typeof import('@/lib/test-reconciliation')>(), verifyExistingTestPayment: vi.fn() }));
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); });
+afterEach(cleanup);
+describe('presentation-only guided navigation', () => {
+  it('retains saved trades, hashes, instruction, history and reconciliation while moving Next and Back', async () => {
+    const record = createTestSettlement('G' + 'A'.repeat(55), 'G' + 'B'.repeat(55), 'd'.repeat(64));
+    record.result = { status: 'Reconciled', checks: { sender: true, recipient: true, amount: true, asset: true, confirmed: true, membership: true }, payments: [], reasons: [], checkedAt: '2026-10-25T15:20:00Z', confirmedAt: '2026-10-25T15:00:00Z' };
+    const instruction = { id: 'SI-existing', status: 'Reconciled', obligationSnapshot: 'saved-snapshot', txHash: 'e'.repeat(64) };
+    localStorage.setItem('cdp-clear-v1', JSON.stringify({ trades: SAMPLE_OBLIGATIONS, instruction, history: [instruction], activity: [], testSettlement: record }));
+    const references = JSON.stringify({ source: record.source, destination: record.destination, hash: record.hash });
+    localStorage.setItem('cdp-clear-test-payment-confirmed', references);
+    render(<StoreProvider><DemoWorkflow /></StoreProvider>);
+    await waitFor(() => expect(screen.getByLabelText('Existing payment transaction hash')).toHaveValue(record.hash));
+    const saved = localStorage.getItem('cdp-clear-v1');
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Net' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Settle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(localStorage.getItem('cdp-clear-v1')).toBe(saved));
+    expect(localStorage.getItem('cdp-clear-test-payment-confirmed')).toBe(references);
+    expect(verifyExistingTestPayment).not.toHaveBeenCalled();
+    expect(JSON.parse(saved ?? '{}').testSettlement).toEqual(record);
+  });
+});
