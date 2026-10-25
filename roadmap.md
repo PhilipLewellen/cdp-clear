@@ -1,3 +1,12 @@
+# Phase 5 settlement exception testing
+- [x] Add "Test a Settlement Exception" to Demo Workflow Step 4, available with or without a scaled instruction (paste any confirmed hash).
+- [x] Isolated read-only panel: fetch real tx + paginated payment operations from Horizon, build a hypothetical instruction from actual sender/recipient/amount/asset/issuer.
+- [x] Three scenarios (default: incorrect expected amount; recipient; alternative issuer), side-by-side Match/Mismatch table, "Exception — Instruction Mismatch" status, Blockchain Successful vs Reconciliation Mismatch callouts, explorer link, "Return to Successful Reconciliation".
+- [x] Component-local state only: no store writes, no record/status/audit changes, no Freighter, no new transactions.
+- [x] Tests and browser validation.
+
+Phase 5 validation: 155 tests pass (13 new); typecheck clean. Browser check loaded a genuine confirmed public Testnet USDC payment (20.0000000 USDC, ledger 5384565), ran the default amount scenario (hypothetical 20.5000000 → Amount Mismatch only) and the issuer scenario (Circle Mainnet issuer → Asset issuer Mismatch only), both showing "Exception — Instruction Mismatch" with "Blockchain result: Successful" intact; Return button closed the panel; no page errors, no Horizon POSTs, no store changes. The public payment was a temporary test fixture, never seeded. Recipient scenario is covered by unit tests (regex-validated user-supplied G-address, no invented address).
+
 # Scaled end-to-end settlement
 - [x] Add scale selector (1:1 … 1:10,000, default 1:1,000) scaling contract quantities proportionally; recalc via existing netting logic.
 - [x] Generate immutable scaled settlement instruction (ID, snapshot, amounts, parties, USDC asset/issuer, network, timestamp) without any blockchain action.
