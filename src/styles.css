@@ -68,6 +68,8 @@
 
 :root {
   --radius: 0.5rem;
+  --control-radius: 6px;
+  --surface-radius: 8px;
   --background: oklch(0.188516 0.017076 252.5875);
   --foreground: oklch(0.955501 0.007592 241.6648);
   --card: oklch(0.235680 0.020984 251.6892);
@@ -108,19 +110,26 @@
 }
 
 /* Shared operational surfaces and compact controls. */
-.workstation { font-size: 13px; font-variant-numeric: tabular-nums; }
-.workstation button { border-radius: 4px; font-size: 13px; height: 32px; }
+.workstation { font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.workstation button { border-radius: var(--control-radius); font-size: 13px; min-height: 36px; height: auto; }
+.workstation button:focus-visible, .workstation input:focus-visible, .workstation select:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.workstation button:disabled { opacity: .6; cursor: not-allowed; }
+.workstation h1 { font-family: var(--font-sans); line-height: 1.35; }
+.workstation main > div:first-child p { font-size: 13px; line-height: 1.6; max-width: 88ch; }
+.workstation .financial-value { white-space: nowrap; font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 500; }
+.workstation dd { min-width: 0; }
+.workstation .module-heading { flex-wrap: wrap; }
 .workstation button[data-slot="tooltip-trigger"] { height: auto; }
 .workstation h2 { font-family: var(--font-sans); font-size: 13px; font-weight: 600; }
 .workspace-table { width: 100%; white-space: nowrap; font-size: 13px; }
-.workspace-table th { height: 34px; background: var(--secondary); text-align: left; font-size: 10px; color: var(--muted-foreground); }
+.workspace-table th { height: 38px; background: var(--secondary); text-align: left; font-size: 11px; color: var(--muted-foreground); }
 .workspace-table td { height: 42px; border-bottom: 1px solid var(--border); }
 .workspace-table th, .workspace-table td { padding: 6px 12px; }
 .workspace-table th.text-right { text-align: right; }
 .workspace-table input, .workspace-table select { padding: 4px 8px; font-size: 13px; }
-.workspace-table tbody tr:hover { background: var(--card); }
+.workspace-table tbody tr:hover, .workspace-table tbody tr:focus-within { background: var(--card); }
 .module-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.module-heading > span { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 10px; }
+.module-heading > span { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 11px; overflow-wrap: anywhere; }
 .settlement-modules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--border); }
 .settlement-module { min-width: 0; padding: 20px; border-bottom: 1px solid var(--border); background: var(--card); }
 .settlement-module:nth-child(odd) { border-right: 1px solid var(--border); }
@@ -141,7 +150,7 @@ input[readonly] { background: var(--secondary); color: var(--muted-foreground); 
 }
 
 .workstation a:focus-visible, .workstation summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-.workstation summary { cursor: pointer; font-size: 13px; color: var(--muted-foreground); }
+.workstation summary { cursor: pointer; font-size: 13px; color: var(--muted-foreground); padding-block: 6px; }
 .workstation summary:hover { color: var(--foreground); }
 .workstation input:invalid { border-color: var(--destructive); }
 .workspace-table tbody tr:target { background: var(--secondary); outline: 1px solid var(--ring); outline-offset: -1px; }
@@ -152,17 +161,47 @@ input[readonly] { background: var(--secondary); color: var(--muted-foreground); 
 .selected-row { background: var(--secondary); }
 @media (max-width: 900px) { .settlement-workspace { grid-template-columns: minmax(0,1fr); } }
 
-.demo-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.demo-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-bottom: 8px; }
 .demo-steps button { width: 100%; height: 40px; }
 .demo-steps button[data-complete] { color: var(--muted-foreground); }
 .workstation .demo-step-title { font-size: 20px; }
 .demo-panel { padding: 20px 0; }
 .demo-panel[hidden] { display: none; }
 .demo-contracts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+.demo-contracts article { min-width: 0; border-radius: var(--surface-radius); }
+.demo-contracts article > p.financial-value { font-size: 24px; }
+.demo-contracts article dl { grid-template-columns: minmax(0,1fr) auto; align-items: baseline; }
+.demo-panel > .settlement-section { padding: 16px 0; margin-top: 0; }
+.demo-panel .settlement-section + .settlement-section { margin-top: 16px; }
+.demo-panel [aria-label="H100 market reference"] dd:first-of-type { font-family: var(--font-sans); font-size: 20px; font-weight: 500; white-space: nowrap; }
+.demo-panel [aria-label="H100 market reference"] dl { row-gap: 12px; }
+.demo-panel [aria-label="Scaled settlement payment"] dt { line-height: 1.6; }
+.demo-panel [aria-label="Scaled settlement payment"] dd { line-height: 1.6; }
 .demo-net-flow { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 24px; align-items: center; padding: 16px 0; }
+@media (min-width: 641px) and (max-width: 1024px) {
+  .demo-contracts { gap: 12px; }
+  .demo-contracts article { padding: 16px 12px; }
+  .demo-contracts article dl { grid-template-columns: minmax(0,1fr); }
+  .demo-contracts article dd { text-align: left; margin-bottom: 4px; }
+  .demo-panel [aria-label="H100 market reference"] dl { grid-template-columns: 130px minmax(0,1fr); }
+}
 @media (max-width: 640px) {
+  .workstation button, .workstation nav a { min-height: 44px; }
+  .workstation header > div { align-items: flex-start; }
+  .workstation header > div > div { gap: 8px; }
+  .workstation header > div > div > span { max-width: 180px; line-height: 1.6; }
+  .workstation .settlement-section dl, .workstation .settlement-module dl { grid-template-columns: 112px minmax(0,1fr); gap: 8px 12px; }
+  .workstation .settlement-section dd { overflow-wrap: anywhere; }
+  .workstation .settlement-section .financial-value { white-space: nowrap; overflow-wrap: normal; }
+  .demo-panel [aria-label="H100 market reference"] dl { grid-template-columns: minmax(0,1fr); row-gap: 4px; }
+  .demo-panel [aria-label="H100 market reference"] dd { margin-bottom: 8px; }
   .demo-steps { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .demo-contracts { grid-template-columns: minmax(0,1fr); }
   .demo-net-flow { grid-template-columns: minmax(0,1fr); gap: 16px; }
   .demo-net-flow > svg { transform: rotate(90deg); }
+  .demo-net-flow > div:has(> svg) { align-items: flex-start; flex-direction: row; }
+  .demo-net-flow > div:has(> svg) svg { transform: rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workstation *, .workstation *::before, .workstation *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
