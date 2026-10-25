@@ -14,6 +14,7 @@ describe('GPU-forward economics', () => {
     expect(deriveObligation(t)).toMatchObject({ amount: Math.abs(Number(payoff)), receiver });
   });
   const sample = SAMPLE_OBLIGATIONS[0];
+  if (!sample) throw new Error('Missing sample');
   function edited(patch: Record<string, unknown>) {
     if (!sample?.economics) throw new Error('Missing economics');
     return deriveObligation({ ...sample, economics: { ...sample.economics, ...patch } });

@@ -19,7 +19,7 @@ describe("bilateral netting", () => {
     expect(r.ok).toBe(false);
   });
   it('reverses the net payment direction', () => {
-    const r = netObligations(SAMPLE_OBLIGATIONS.map(o => ({ ...o, economics: undefined, receiver: o.receiver === 'A' ? 'B' : 'A' })));
+    const r = netObligations(SAMPLE_OBLIGATIONS.map(({ economics, ...o }) => ({ ...o, receiver: o.receiver === 'A' ? 'B' : 'A' })));
     expect(r.payer).toBe('A'); expect(r.payee).toBe('B'); expect(r.net).toBe(1500);
   });
   it('zero balance requires no net payment', () => {

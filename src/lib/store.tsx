@@ -12,7 +12,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setTrades = (rows: Obligation[]) => {
     const next = rows.map(deriveObligation);
     next.filter(row => !trades.some(old => old.id === row.id)).forEach(row => recordActivity({ category: 'Demo operation', action: 'Obligation created', reference: row.id, detail: `${row.currency} ${row.amount.toFixed(2)} · Illustrative obligation` }));
-    next.filter(row => trades.some(old => old.id === row.id && JSON.stringify(old) !== JSON.stringify(row))).forEach(row => recordActivity({ category: 'Demo operation', action: 'Trade edited', reference: row.id, detail: `${row.currency} ${row.amount.toFixed(2)} · Derived from simulated GPU-forward economics`, lifecycle: row.lifecycle }));
+    next.filter(row => trades.some(old => old.id === row.id && JSON.stringify(old) !== JSON.stringify(row))).forEach(row => recordActivity({ category: 'Demo operation', action: 'Trade edited', reference: row.id, detail: `${row.currency} ${row.amount.toFixed(2)} · Derived from simulated GPU-forward economics`, lifecycle: row.lifecycle ?? 'Captured' }));
     if (next.length < trades.length) recordActivity({ category: 'Demo operation', action: 'Obligation removed', reference: 'NS-AB-001', detail: `${trades.length - next.length} record(s) removed` });
     updateTrades(next);
   };
