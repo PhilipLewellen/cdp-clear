@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info, RotateCcw } from 'lucide-react';
 
 const tabs = [
+  { to: "/overview", label: "Overview" },
   { to: "/", label: "Obligations" },
   { to: "/netting", label: "Netting" },
   { to: "/settlement", label: "Settlement" },
@@ -23,7 +24,7 @@ export function Shell({ title, intro, children }: { title: string; intro: string
         </div>
       </header>
       <nav aria-label="Operations workflow" className="border-b border-border">
-        <div className="mx-auto flex max-w-[1480px] gap-2 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-[1480px] gap-1 overflow-x-auto px-4 sm:px-6">
           {tabs.map(t => <Button key={t.to} asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={t.to} className="text-muted-foreground" activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{t.label}</Link></Button>)}
         </div>
       </nav>
