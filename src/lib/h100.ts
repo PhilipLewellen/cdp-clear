@@ -26,8 +26,8 @@ const change = (value: unknown) => (typeof value === 'number' && Number.isFinite
 export function parseH100(payload: unknown): H100Observation | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
-  const gpus = root.gpus as Record<string, unknown> | undefined;
-  const h100 = gpus?.H100 as Record<string, unknown> | undefined;
+  const gpus = root['gpus'] as Record<string, unknown> | undefined;
+  const h100 = gpus?.['H100'] as Record<string, unknown> | undefined;
   const value = h100?.['value'];
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
   return {
