@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as NettingRouteImport } from './routes/netting'
+import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as SettlementRouteImport } from './routes/settlement'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const NettingRoute = NettingRouteImport.update({
   path: '/netting',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OverviewRoute = OverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettlementRoute = SettlementRouteImport.update({
   id: '/settlement',
   path: '/settlement',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/netting': typeof NettingRoute
+  '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/netting': typeof NettingRoute
+  '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/netting': typeof NettingRoute
+  '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/activity' | '/netting' | '/settlement'
+  fullPaths: '/' | '/activity' | '/netting' | '/overview' | '/settlement'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/activity' | '/netting' | '/settlement'
-  id: '__root__' | '/' | '/activity' | '/netting' | '/settlement'
+  to: '/' | '/activity' | '/netting' | '/overview' | '/settlement'
+  id: '__root__' | '/' | '/activity' | '/netting' | '/overview' | '/settlement'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
   NettingRoute: typeof NettingRoute
+  OverviewRoute: typeof OverviewRoute
   SettlementRoute: typeof SettlementRoute
 }
 
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NettingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/overview': {
+      id: '/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof OverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settlement': {
       id: '/settlement'
       path: '/settlement'
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
   NettingRoute: NettingRoute,
+  OverviewRoute: OverviewRoute,
   SettlementRoute: SettlementRoute,
 }
 export const routeTree = rootRouteImport

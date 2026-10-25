@@ -36,6 +36,10 @@ describe('cash-leg verification and reconciliation', () => {
   it('rejects changed netting obligations', () => {
     expect(reconcileInstruction(instruction, success, SAMPLE_OBLIGATIONS.map(o => ({ ...o, amount: 0 })), []).status).toBe('Exception');
   });
+  it('rejects a second payment for an already reconciled obligation snapshot', () => {
+    const previous = { ...instruction, id: 'SI-0', status: 'Reconciled' as const, txHash: 'b'.repeat(64) };
+    expect(reconcileInstruction(instruction, success, SAMPLE_OBLIGATIONS, [previous]).status).toBe('Exception');
+  });
   it('rejects reconciliation without issuer validation', () => {
     expect(reconcileInstruction({ ...instruction, issuerVerifiedAt: undefined }, success, SAMPLE_OBLIGATIONS, []).status).toBe('Exception');
   });

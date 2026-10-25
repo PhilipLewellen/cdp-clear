@@ -1,4 +1,11 @@
 export type Party = "A" | "B";
+export interface ForwardEconomics {
+  instrument: 'GPU compute forward';
+  longParty: Party;
+  quantity: number;
+  strike: number;
+  fixing: number;
+}
 export interface Obligation {
   id: string;
   receiver: Party; // the party that receives cash; the other party pays
@@ -7,12 +14,30 @@ export interface Obligation {
   settlementDate?: string;
   lifecycle?: 'Captured' | 'Validated';
   eligible?: boolean;
+  economics?: ForwardEconomics;
+}
+
+export function forwardPayoff(e: ForwardEconomics) {
+  return Math.round(e.quantity * (e.fixing - e.strike) * 100) / 100;
+}
+export function deriveObligation(trade: Obligation): Obligation {
+  if (!trade.economics) return trade;
+  const payoff = forwardPayoff(trade.economics);
+  return { ...trade, amount: Math.abs(payoff), receiver: payoff >= 0 ? trade.economics.longParty : trade.economics.longParty === 'A' ? 'B' : 'A' };
+}
+/** Upgrade old cash rows without replacing saved values or contract metadata. */
+export function upgradeObligation(trade: Obligation): Obligation {
+  if (trade.economics) return deriveObligation(trade);
+  const sample = SAMPLE_OBLIGATIONS.find(row => row.id === trade.id)?.economics;
+  const quantity = sample?.quantity ?? 100;
+  const strike = sample?.strike ?? 3;
+  return deriveObligation({ ...trade, economics: { instrument: 'GPU compute forward', longParty: 'A', quantity, strike, fixing: strike + (trade.receiver === 'A' ? trade.amount : -trade.amount) / quantity } });
 }
 
 export const SAMPLE_OBLIGATIONS: Obligation[] = [
-  { id: "T-001", receiver: "A", amount: 2000, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
-  { id: "T-002", receiver: "B", amount: 800, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
-  { id: "T-003", receiver: "A", amount: 300, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
+  { id: "T-001", receiver: "A", amount: 2000, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true, economics: { instrument: 'GPU compute forward', longParty: 'A', quantity: 1000, strike: 3, fixing: 5 } },
+  { id: "T-002", receiver: "B", amount: 800, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true, economics: { instrument: 'GPU compute forward', longParty: 'A', quantity: 400, strike: 4, fixing: 2 } },
+  { id: "T-003", receiver: "A", amount: 300, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true, economics: { instrument: 'GPU compute forward', longParty: 'A', quantity: 300, strike: 3, fixing: 4 } },
 ];
 
 export interface NetResult {
@@ -33,6 +58,10 @@ export function netObligations(obs: Obligation[]): NetResult {
   const currencies = new Set(obs.map((o) => o.currency.trim().toUpperCase()));
   const currency = [...currencies][0] ?? "USD";
   const base = { currency, gross: 0, aReceives: 0, bReceives: 0, net: 0, payer: null, payee: null, reduction: 0 };
+  if (obs.some(o => o.economics && (!Number.isFinite(o.economics.quantity) || o.economics.quantity <= 0 || !Number.isFinite(o.economics.strike) || o.economics.strike < 0 || !Number.isFinite(o.economics.fixing) || o.economics.fixing < 0)))
+    return { ...base, ok: false, error: 'GPU quantity must be positive; strike and simulated fixing must be non-negative finite prices.' };
+  if (obs.some(o => o.economics && (deriveObligation(o).amount !== o.amount || deriveObligation(o).receiver !== o.receiver)))
+    return { ...base, ok: false, error: 'Cash obligations must match the GPU-forward economics.' };
   if (currencies.size > 1)
     return { ...base, ok: false, error: "Mixed currencies cannot be netted bilaterally." };
   if (new Set(obs.map(o => o.settlementDate ?? '2026-10-26')).size > 1)

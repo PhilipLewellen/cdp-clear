@@ -25,14 +25,18 @@ export interface Instruction {
 }
 export const publicAddress = (s: string) => /^G[A-Z2-7]{55}$/.test(s.trim());
 export const obligationSnapshot = (trades: Obligation[]) => JSON.stringify(trades);
+export function settledSnapshot(trades: Obligation[], history: Instruction[]) {
+  return history.some(i => i.status === 'Reconciled' && i.obligationSnapshot === obligationSnapshot(trades));
+}
 export function reconcileInstruction(instruction: Instruction, result: VerifyResult, trades: Obligation[], history: Instruction[]): Instruction {
   const duplicate = history.some(i => i.id !== instruction.id && i.status === 'Reconciled' && i.txHash === instruction.txHash);
+  const alreadySettled = history.some(i => i.id !== instruction.id && i.status === 'Reconciled' && i.obligationSnapshot === instruction.obligationSnapshot);
   const net = netObligations(trades);
   const unchanged = net.ok && net.net > 0 && net.net === instruction.amount && net.currency === instruction.currency && net.payer === instruction.payer && net.payee === instruction.beneficiary && obligationSnapshot(trades) === instruction.obligationSnapshot;
   if (!result.confirmed) return { ...instruction, status: result.failed ? 'Failed' : 'Exception', verifiedNote: result.reasons.join(' ') };
   const confirmed = { ...instruction, confirmedAt: result.createdAt, ledger: result.ledger };
-  if (duplicate || !unchanged || !result.ok || !instruction.issuerVerifiedAt) {
-    return { ...confirmed, status: 'Exception', verifiedNote: duplicate ? 'Transaction already allocated to a reconciled instruction.' : !unchanged ? 'Netting set changed; create a new instruction.' : !instruction.issuerVerifiedAt ? 'Asset issuer requires testnet validation.' : result.reasons.join(' ') };
+  if (duplicate || alreadySettled || !unchanged || !result.ok || !instruction.issuerVerifiedAt) {
+    return { ...confirmed, status: 'Exception', verifiedNote: duplicate ? 'Transaction already allocated to a reconciled instruction.' : alreadySettled ? 'This obligation snapshot is already reconciled.' : !unchanged ? 'Netting set changed; create a new instruction.' : !instruction.issuerVerifiedAt ? 'Asset issuer requires testnet validation.' : result.reasons.join(' ') };
   }
   return { ...confirmed, status: 'Reconciled', reconciledAt: new Date().toISOString(), verifiedNote: 'Asset, issuer, amount, payer and beneficiary match the snapshotted net settlement obligation.' };
 }

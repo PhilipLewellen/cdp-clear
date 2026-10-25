@@ -14,4 +14,7 @@ describe('Truthful activity evidence', () => {
   it('does not invent events for an unchanged instruction', () => {
     expect(instructionActivity(draft, draft)).toBeNull();
   });
+  it('a supplied hash is a local verification request, not a Submitted network event', () => {
+    expect(instructionActivity(draft, { ...draft, status: 'Submitted', txHash: 'a'.repeat(64) })).toMatchObject({ category: 'Demo operation', action: 'Verification requested', lifecycle: 'Verification pending' });
+  });
 });
