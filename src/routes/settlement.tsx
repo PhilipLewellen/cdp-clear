@@ -129,7 +129,7 @@ function Settlement() {
       </section>
       </div>
       <div className="settlement-side">
-        <details className="settlement-section"><summary className="text-sm font-medium">Advanced Tools / Historical Test Payments</summary>
+        <details className="settlement-section"><summary className="text-sm font-medium">Historical Test Tools</summary>
           <p className="mb-4 mt-3 text-xs text-muted-foreground">The standalone 1 USDC Testnet payment and its reconciliation record from development. Unrelated to the scaled settlement workflow; all hashes, records and audit events are preserved.</p>
           <TestSettlementReconciliation />
           <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
