@@ -14,6 +14,8 @@ import appCss from "../styles.css?url";
 import { StoreProvider } from "../lib/store";
 import { WalletProvider } from '@/components/WalletProvider';
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { redirect } from "@tanstack/react-router";
+import { checkUnlocked } from "@/lib/gate.functions";
 
 function NotFoundComponent() {
   return (
@@ -76,6 +78,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/unlock") return;
+    const { unlocked } = await checkUnlocked();
+    if (!unlocked) throw redirect({ to: "/unlock" });
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
