@@ -1,3 +1,9 @@
+# H100 market data integration
+- [x] Add Compute Screener H100 fetch/validation/cache module with no hardcoded or fallback prices.
+- [x] Add H100 Market Reference panel with refresh, scenario run/reset and CC BY 4.0 attribution in Demo Workflow Step 1.
+- [x] Add Original Demo / Market Data Scenario switch, indicative-scenario label and net comparison; keep scenario state separate from booked records.
+- [ ] Run tests and browser check of refresh, scenario recalculation, reset and error states.
+
 # Guided live-demo UX
 - [x] Add prominent Demo Workflow with Calculate → Net → Settle → Verify and Next/Back navigation.
 - [x] Reuse existing payment and retrospective verification without changing financial logic or saved records; collapse advanced details.
