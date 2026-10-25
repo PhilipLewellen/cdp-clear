@@ -12,7 +12,7 @@ export const SETTLEMENT_SCALES: SettlementScale[] = [
   { key: 'thousandth', label: 'One-thousandth', ratio: '1:1,000', divisor: 1000 },
   { key: 'ten-thousandth', label: 'One-ten-thousandth', ratio: '1:10,000', divisor: 10000 },
 ];
-export const DEFAULT_SCALE = SETTLEMENT_SCALES[3]; // One-thousandth
+export const DEFAULT_SCALE: SettlementScale = { key: 'thousandth', label: 'One-thousandth', ratio: '1:1,000', divisor: 1000 };
 
 /** Proportional quantity scaling on copies; prices and fixings stay unchanged. */
 export function scaleTrades(trades: Obligation[], divisor: number): Obligation[] {
