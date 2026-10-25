@@ -5,6 +5,7 @@ import { useFreighter } from '@/hooks/use-freighter';
 import { inputCls } from '@/lib/ui-classes';
 import { USDC_ASSET } from '@/lib/wallet-balances';
 import { testPaymentSession, type PendingTestPayment } from '@/lib/test-payment-session';
+import { savePayment } from '@/lib/payment-evidence';
 import { prepareTestPayment, submitTestPayment, readTestPayment, paymentError, TEST_PAYMENT_AMOUNT, type PreparedTestPayment, type ConfirmedTestPayment } from '@/lib/test-payment';
 
 export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) {
@@ -35,6 +36,8 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
     window.dispatchEvent(new Event('cdp-clear-payment-update'));
   };
   const finish = (result: ConfirmedTestPayment) => {
+    const payment = testPaymentSession.pending?.payment ?? prepared;
+    if (payment) savePayment({ hash: result.hash, source: payment.source, destination: payment.destination });
     setConfirmed(result); setPending(null); testPaymentSession.pending = null;
     sessionStorage.removeItem('cdp-clear-test-payment-pending');
     window.dispatchEvent(new Event('cdp-clear-payment-update'));
@@ -64,7 +67,7 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
       if (await current.current.checkConnection() !== fresh.source) throw new Error('Wallet changed after signing. Nothing submitted.');
       setPhase('Submitting and confirming on Stellar Testnet…');
       const result = await submitTestPayment(fresh, signed, hash => remember(fresh, hash));
-      if (result) finish(result);
+      if (result) { savePayment({ hash: result.hash, source: fresh.source, destination: fresh.destination }); finish(result); }
       else setError('Confirmation is pending. Check status below; do not send another payment.');
     } catch (e) { setError(paymentError(e)); }
     finally { guard.current = false; testPaymentSession.locked = false; setPhase(''); }

@@ -3,6 +3,8 @@ import { SAMPLE_OBLIGATIONS, deriveObligation, upgradeObligation, type Obligatio
 import { LIFECYCLE, type Instruction } from './settlement';
 import { instructionActivity, type ActivityEvent } from './activity';
 import { StoreContext } from './store-context';
+import { createTestSettlement, TEST_RECORD_ID, type TestSettlement } from './test-reconciliation';
+import { savedPayment } from './payment-evidence';
 const KEY = "cdp-clear-v1";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -18,6 +20,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
   const [instruction, updateInstruction] = useState<Instruction | null>(null);
   const [history, setHistory] = useState<Instruction[]>([]);
+  const [testSettlement, updateTestSettlement] = useState<TestSettlement | null>(null);
+  const setTestSettlement = (record: TestSettlement) => {
+    updateTestSettlement(record);
+    const added = record.audit.slice(testSettlement?.audit.length ?? 0);
+    added.forEach(event => setActivity(previous => [...previous, {
+      id: crypto.randomUUID(), at: event.at, category: event.action === 'Transaction confirmed on Stellar' ? 'Network evidence' : 'Demo operation',
+      action: event.action, reference: record.id, detail: event.detail, lifecycle: record.result?.status ?? 'Awaiting verification',
+    }]));
+  };
   const setInstruction = (i: Instruction | null) => {
     const event = instructionActivity(instruction, i);
     if (event) recordActivity(event);
@@ -32,12 +43,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (s?.instruction) updateInstruction(LIFECYCLE.includes(s.instruction.status) && s.instruction.obligationSnapshot ? s.instruction : { ...s.instruction, status: 'Exception', verifiedNote: 'Legacy instruction requires fresh issuer validation and independent network verification.' });
       if (Array.isArray(s?.history)) setHistory(s.history);
       if (Array.isArray(s?.activity)) setActivity(s.activity);
+      if (s?.testSettlement?.id === TEST_RECORD_ID && Array.isArray(s.testSettlement.audit)) updateTestSettlement(s.testSettlement);
+      else {
+        const saved = savedPayment();
+        updateTestSettlement(createTestSettlement(saved?.source, saved?.destination, saved?.hash));
+      }
     } catch {}
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify({ trades, instruction, history, activity }));
-  }, [trades, instruction, history, activity, loaded]);
+    if (loaded) localStorage.setItem(KEY, JSON.stringify({ trades, instruction, history, activity, testSettlement }));
+  }, [trades, instruction, history, activity, testSettlement, loaded]);
   const reset = () => {
     updateTrades(SAMPLE_OBLIGATIONS);
     updateInstruction(null);
@@ -45,5 +61,5 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setActivity([]);
     recordActivity({ category: 'Demo operation', action: 'Demo reset', reference: 'NS-AB-001', detail: 'Three valid eligible sample obligations restored' });
   };
-  return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity }}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity, testSettlement, setTestSettlement }}>{children}</StoreContext.Provider>;
 }
