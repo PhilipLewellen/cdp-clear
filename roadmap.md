@@ -1,3 +1,7 @@
+# Phase 1 wallet connection
+- [x] Freighter connect/disconnect in header, Testnet-only guard, no persistence.
+- [ ] Real Freighter connection check on published site (needs the user's browser extension).
+
 # CDP Clear functional workflow
 - [x] Upgrade Overview cash exposure, counterparty flows and settlement next actions.
 - [x] Add isolated GPU-price scenarios and calculation tests.
