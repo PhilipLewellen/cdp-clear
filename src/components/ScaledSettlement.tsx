@@ -206,5 +206,10 @@ export function ScaledSettlementVerify() {
     </div>
     {!canVerify && <p className="mt-3 text-xs text-muted-foreground">Verification becomes available after a payment transaction hash, payer wallet and recipient are recorded for this instruction.</p>}
     {instruction.status === 'Reconciled' && <p className="mt-4 text-sm text-success">Scaled settlement reconciled against instruction {instruction.id}. The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>}
+    <div className="mt-6 border-t border-border pt-4">
+      <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
+      <p className="mt-2 text-xs text-muted-foreground">Isolated demonstration: reconcile a real confirmed Testnet payment against a deliberately incorrect hypothetical instruction. No records change and no payment is made.</p>
+    </div>
+    {exceptionOpen && <SettlementException defaultHash={instruction.txHash} onClose={() => setExceptionOpen(false)} />}
   </section>;
 }
