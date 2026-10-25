@@ -48,7 +48,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const saved = savedPayment();
         updateTestSettlement(createTestSettlement(saved?.source, saved?.destination, saved?.hash));
       }
-    } catch {}
+    } catch { updateTestSettlement(createTestSettlement()); }
     setLoaded(true);
   }, []);
   useEffect(() => {
@@ -58,7 +58,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     updateTrades(SAMPLE_OBLIGATIONS);
     updateInstruction(null);
     setHistory([]);
-    setActivity([]);
+    setActivity(previous => previous.filter(event => event.reference === TEST_RECORD_ID));
     recordActivity({ category: 'Demo operation', action: 'Demo reset', reference: 'NS-AB-001', detail: 'Three valid eligible sample obligations restored' });
   };
   return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity, testSettlement, setTestSettlement }}>{children}</StoreContext.Provider>;

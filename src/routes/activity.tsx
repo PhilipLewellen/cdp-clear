@@ -17,7 +17,7 @@ export const Route = createFileRoute('/activity')({
 
 function Activity() {
   const { activity } = useStore();
-  const referenceLink = (reference: string) => reference.startsWith('T-') ? <Button asChild variant="ghost" className="!h-auto px-0 font-mono text-xs"><Link to="/" hash={reference}>{reference}</Link></Button> : <Button asChild variant="ghost" className="!h-auto px-0 font-mono text-xs"><Link to={reference.startsWith('SI-') ? '/settlement' : '/netting'}>{reference}</Link></Button>;
+  const referenceLink = (reference: string) => reference.startsWith('T-') ? <Button asChild variant="ghost" className="!h-auto px-0 font-mono text-xs"><Link to="/" hash={reference}>{reference}</Link></Button> : <Button asChild variant="ghost" className="!h-auto px-0 font-mono text-xs"><Link to={reference.startsWith('SI-') || reference.startsWith('TEST-SETTLEMENT-') ? '/settlement' : '/netting'}>{reference}</Link></Button>;
   return <Shell title="Activity" intro="Chronological register / browser-local operations and network evidence">
     <section className="border-y border-border bg-card">
       <div className="border-b border-border p-4 text-sm">{activity.length} recorded events <span className="ml-4 text-xs text-muted-foreground">Latest first</span></div>

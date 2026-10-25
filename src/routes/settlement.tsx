@@ -68,7 +68,7 @@ function Settlement() {
   const verify = async () => {
     if (!instruction || busy || instruction.status === 'Reconciled' || !unchanged || !instruction.issuerVerifiedAt || !/^[0-9a-fA-F]{64}$/.test(hash.trim())) return;
     const txHash = hash.trim().toLowerCase();
-    if (testSettlement?.result?.status === 'Reconciled' && testSettlement.hash === txHash || history.some(row => row.txHash === txHash && row.id !== instruction.id)) {
+    if (testSettlement?.allocatedHashes?.includes(txHash) || (testSettlement?.result?.status === 'Reconciled' && testSettlement.hash === txHash) || history.some(row => row.txHash === txHash && row.id !== instruction.id)) {
       setInstruction({ ...instruction, status: 'Exception', verifiedNote: 'Transaction already allocated to a reconciled instruction.' });
       setMsg('Duplicate settlement rejected. Use a new payment transaction.'); return;
     }

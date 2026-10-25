@@ -8,7 +8,7 @@ const record = createTestSettlement(source, destination, hash);
 const tx = { hash, successful: true, created_at: '2026-10-25T15:00:00Z', ledger: 123 };
 const op: ActualPayment = { id: 'operation-1', transaction_hash: hash, transaction_successful: true, type: 'payment', from: source, to: destination, amount: '1.0000000', asset_code: 'USDC', asset_issuer: DEFAULT_ISSUER };
 const mocks = vi.hoisted(() => ({ root: vi.fn(), tx: vi.fn(), page: vi.fn(), next: vi.fn() }));
-vi.mock('@stellar/stellar-sdk', () => ({ StrKey: { isValidEd25519PublicKey: (value: string) => /^G[A-Z2-7]{55}$/.test(value) }, Horizon: { Server: class {
+vi.mock('@stellar/stellar-sdk', () => ({ Networks: { TESTNET: 'Test SDF Network ; September 2015', PUBLIC: 'PUBLIC' }, StrKey: { isValidEd25519PublicKey: (value: string) => /^G[A-Z2-7]{55}$/.test(value) }, Horizon: { Server: class {
   root = mocks.root;
   transactions() { return { transaction: () => ({ call: mocks.tx }) }; }
   operations() { return { forTransaction: () => ({ limit: () => ({ order: () => ({ call: mocks.page }) }) }) }; }
@@ -18,7 +18,9 @@ describe('retrospective exact Testnet reconciliation', () => {
   it('reconciles TEST-SETTLEMENT-001 for exactly one USDC and preserves 3100/1500 netting', () => {
     expect(record.id).toBe('TEST-SETTLEMENT-001');
     expect(matchTestPayment(record, tx, [op], [])).toMatchObject({ status: 'Reconciled', operationId: 'operation-1', confirmedAt: tx.created_at });
-    expect(netObligations(SAMPLE_OBLIGATIONS)).toMatchObject({ gross: 3100, net: 1500, reductionPct: expect.any(Number) });
+    const net = netObligations(SAMPLE_OBLIGATIONS);
+    expect(net).toMatchObject({ gross: 3100, net: 1500, reduction: 1600 });
+    expect((net.reduction / net.gross * 100).toFixed(1)).toBe('51.6');
   });
   it.each([
     ['sender', { from: destination }], ['recipient', { to: source }], ['amount', { amount: '1.0000001' }], ['sub-stroop decimal', { amount: '1.00000001' }], ['asset code', { asset_code: 'OTHER' }], ['issuer', { asset_issuer: source }], ['transaction membership', { transaction_hash: 'b'.repeat(64) }], ['operation success', { transaction_successful: false }],

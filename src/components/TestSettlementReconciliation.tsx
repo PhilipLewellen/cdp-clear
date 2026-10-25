@@ -45,7 +45,7 @@ export function TestSettlementReconciliation() {
       const audit = [...snap.audit];
       if (result.checks.confirmed && result.confirmedAt && !audit.some(event => event.action === 'Transaction confirmed on Stellar' && event.detail === snap.hash)) audit.push({ action: 'Transaction confirmed on Stellar', at: result.confirmedAt, detail: snap.hash });
       audit.push({ action: result.status === 'Reconciled' ? 'Reconciliation completed' : result.status === 'Verification unavailable' ? 'Verification unavailable' : 'Exception detected', at: result.checkedAt, detail: result.status === 'Reconciled' ? `${snap.hash} · Operation ${result.operationId} · Exact 1.0000000 USDC matched` : result.reasons.join(' ') });
-      setTestSettlement({ ...snap, result, audit });
+      setTestSettlement({ ...snap, result, audit, allocatedHashes: result.status === 'Reconciled' ? [...new Set([...(snap.allocatedHashes ?? []), snap.hash])] : snap.allocatedHashes });
     } finally { guard.current = false; setBusy(false); }
   };
   const result = record.result;

@@ -6,7 +6,7 @@ export interface ActualPayment { id: string; transaction_hash: string; transacti
 export interface TestChecks { sender: boolean; recipient: boolean; amount: boolean; asset: boolean; confirmed: boolean; membership: boolean; }
 export interface TestResult { status: TestStatus; reasons: string[]; checks: TestChecks; payments: ActualPayment[]; operationId?: string; confirmedAt?: string; ledger?: number; checkedAt: string; }
 export interface TestAudit { action: string; at: string; detail: string; }
-export interface TestSettlement { id: string; source: string; destination: string; hash: string; createdAt: string; result: TestResult | null; audit: TestAudit[]; }
+export interface TestSettlement { id: string; source: string; destination: string; hash: string; createdAt: string; result: TestResult | null; audit: TestAudit[]; allocatedHashes?: string[]; }
 export function createTestSettlement(source = '', destination = '', hash = ''): TestSettlement {
   const at = new Date().toISOString();
   return { id: TEST_RECORD_ID, source, destination, hash, createdAt: at, result: null, audit: [{ action: 'Settlement record created', at, detail: 'Retrospective 1.0000000 USDC test reconciliation' }, ...(hash ? [{ action: 'Existing transaction associated', at, detail: hash }] : [])] };
@@ -55,7 +55,7 @@ export async function verifyExistingTestPayment(record: TestSettlement, allocate
       }
       page = await page.next();
     }
-    return matchTestPayment(record, tx, operations, allocated);
+    return matchTestPayment(record, { hash: tx.hash, successful: tx.successful, created_at: tx.created_at, ledger: tx.ledger_attr }, operations, allocated);
   } catch (error) {
     const status = (error as { response?: { status?: number } })?.response?.status;
     return unavailable(status === 404 ? 'Transaction not found on Stellar Testnet.' : error instanceof Error ? error.message : 'Horizon verification unavailable.');
