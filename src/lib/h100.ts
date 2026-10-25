@@ -28,14 +28,14 @@ export function parseH100(payload: unknown): H100Observation | null {
   const root = payload as Record<string, unknown>;
   const gpus = root.gpus as Record<string, unknown> | undefined;
   const h100 = gpus?.H100 as Record<string, unknown> | undefined;
-  const value = h100?.value;
+  const value = h100?.['value'];
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
   return {
     value,
-    date: text(h100?.date),
-    final: h100?.final === true,
-    benchmark: text(h100?.benchmark),
-    terms: text(h100?.terms),
+    date: text(h100?.['date']),
+    final: h100?.['final'] === true,
+    benchmark: text(h100?.['benchmark']),
+    terms: text(h100?.['terms']),
     chg1d: change(h100?.['chg_1d']),
     chg7d: change(h100?.['chg_7d']),
     updated: text(root['updated']),
