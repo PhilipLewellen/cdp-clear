@@ -6,19 +6,29 @@ import { Button } from '@/components/ui/button';
 import { TestSettlementPayment } from '@/components/TestSettlementPayment';
 import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
+import { H100MarketPanel } from '@/components/H100MarketPanel';
 import { useStore } from '@/lib/use-store';
-import { fmt, netObligations } from '@/lib/netting';
+import { deriveObligation, fmt, netObligations } from '@/lib/netting';
+import { marketScenario } from '@/lib/h100';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
 
 export function DemoWorkflow() {
   const { trades, testSettlement } = useStore();
   const [step, setStep] = useState(0);
   const [refresh, setRefresh] = useState(0);
+  const [scenarioFixing, setScenarioFixing] = useState<number | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const r = netObligations(trades);
+  const scenario = scenarioFixing === null ? null : marketScenario(trades, scenarioFixing);
+  const scenarioMode = Boolean(scenario?.ok);
+  const shown = scenarioMode
+    ? trades.map(t => t.economics ? deriveObligation({ ...t, economics: { ...t.economics, fixing: scenarioFixing as number } }) : t)
+    : trades;
+  const shownNet = scenarioMode ? scenario : r;
   const result = testSettlement?.result;
   const confirmed = result?.checks.confirmed === true && Boolean(result.confirmedAt);
   const direction = r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment needed';
+  const shownDirection = shownNet?.payer ? `CP-${shownNet.payer} → CP-${shownNet.payee}` : 'Fully offset · no payment needed';
   const labels = ['Calculate', 'Net', 'Settle', 'Verify'];
   const changeStep = (next: number) => { setStep(next); requestAnimationFrame(() => heading.current?.focus()); };
   return <Shell title="Demo Workflow" intro="GPU compute forwards → bilateral payment netting → separate Testnet payment → on-chain verification">
