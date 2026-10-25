@@ -4,19 +4,15 @@ import { Button } from '@/components/ui/button';
 import { useFreighter } from '@/hooks/use-freighter';
 import { inputCls } from '@/lib/ui-classes';
 import { USDC_ASSET } from '@/lib/wallet-balances';
+import { testPaymentSession, type PendingTestPayment } from '@/lib/test-payment-session';
 import { prepareTestPayment, submitTestPayment, readTestPayment, paymentError, TEST_PAYMENT_AMOUNT, type PreparedTestPayment, type ConfirmedTestPayment } from '@/lib/test-payment';
-
-type Pending = { payment: PreparedTestPayment; hash: string };
-// Operation lock outside the component survives navigation without persisting wallet access.
-let executionLocked = false;
-let pendingAttempt: Pending | null = null;
 
 export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) {
   const wallet = useFreighter();
   const [recipient, setRecipient] = useState('');
   const [prepared, setPrepared] = useState<PreparedTestPayment | null>(null);
   const [confirmed, setConfirmed] = useState<ConfirmedTestPayment | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [pending, setPending] = useState<PendingTestPayment | null>(null);
   const [phase, setPhase] = useState('');
   const [error, setError] = useState('');
   const guard = useRef(false);
