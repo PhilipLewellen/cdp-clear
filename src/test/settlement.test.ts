@@ -6,18 +6,26 @@ import { DEFAULT_ISSUER, TESTNET_PASSPHRASE, verifyTestnetPayment, verifyTestnet
 const hash = 'a'.repeat(64);
 const instruction: Instruction = { id: 'SI-1', createdAt: '2026-10-25', assetCode: 'USDC', assetIssuer: DEFAULT_ISSUER, source: 'G' + 'A'.repeat(55), destination: 'G' + 'B'.repeat(55), currency: 'USD', payer: 'B', beneficiary: 'A', amount: 1500, obligationSnapshot: obligationSnapshot(SAMPLE_OBLIGATIONS), status: 'Confirmed', txHash: hash, issuerVerifiedAt: '2026-10-25' };
 const success = { ok: true, confirmed: true, reasons: [], ledger: 123, createdAt: '2026-10-25' };
-function network({ successful = true, from = instruction.source, to = instruction.destination, amount = '1500.0000000', asset_code = 'USDC', asset_issuer = DEFAULT_ISSUER, passphrase = TESTNET_PASSPHRASE } = {}) {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ network_passphrase: passphrase }))).mockResolvedValueOnce(new Response(JSON.stringify({ _embedded: { records: [{ asset_code: 'USDC', asset_issuer: DEFAULT_ISSUER }] } }))).mockResolvedValueOnce(new Response(JSON.stringify({ hash, successful, ledger: 123, created_at: '2026-10-25' }))).mockResolvedValueOnce(new Response(JSON.stringify({ _embedded: { records: [{ type: 'payment', from, to, amount, asset_code, asset_issuer }] } }))));
+function network({ successful = true, from = instruction.source, to = instruction.destination, amount = '1500.0000000', asset_code = 'USDC', asset_issuer = DEFAULT_ISSUER, passphrase = TESTNET_PASSPHRASE, transaction_hash = hash, transaction_successful = true } = {}) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ network_passphrase: passphrase }))).mockResolvedValueOnce(new Response(JSON.stringify({ _embedded: { records: [{ asset_code: 'USDC', asset_issuer: DEFAULT_ISSUER }] } }))).mockResolvedValueOnce(new Response(JSON.stringify({ hash, successful, ledger: 123, created_at: '2026-10-25' }))).mockResolvedValueOnce(new Response(JSON.stringify({ _embedded: { records: [{ id: '123-1', transaction_hash, transaction_successful, type: 'payment', from, to, amount, asset_code, asset_issuer }] } }))));
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('cash-leg verification and reconciliation', () => {
   it('independently confirms a successful matching testnet payment', async () => {
-    network(); expect(await verifyTestnetPayment({ ...instruction, hash })).toEqual(success);
+    network(); expect(await verifyTestnetPayment({ ...instruction, hash })).toMatchObject({ ...success, payment: { id: '123-1', transactionHash: hash, amount: '1500.0000000' } });
   });
   it('never confirms failed network execution', async () => {
     network({ successful: false }); const result = await verifyTestnetPayment({ ...instruction, hash });
     expect(result.confirmed).not.toBe(true); expect(result.failed).toBe(true);
     expect(reconcileInstruction(instruction, result, SAMPLE_OBLIGATIONS, []).status).toBe('Failed');
+  });
+  it('rejects a payment belonging to another transaction', async () => {
+    network({ transaction_hash: 'b'.repeat(64) });
+    expect((await verifyTestnetPayment({ ...instruction, hash })).ok).toBe(false);
+  });
+  it('rejects an unsuccessful operation even in a successful transaction response', async () => {
+    network({ transaction_successful: false });
+    expect((await verifyTestnetPayment({ ...instruction, hash })).ok).toBe(false);
   });
   it.each([
     ['asset code', { asset_code: 'OTHER' }], ['issuer', { asset_issuer: 'wrong' }], ['amount', { amount: '1499.0000000' }], ['payer', { from: 'wrong' }], ['beneficiary', { to: 'wrong' }],

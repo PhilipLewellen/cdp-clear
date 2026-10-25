@@ -32,7 +32,7 @@ export async function verifyTestnetPayment(i: VerifyInput): Promise<VerifyResult
   if (!/^[0-9a-f]{64}$/.test(hash)) return { ok: false, reasons: ['Hash must be 64 hex characters.'] };
   await verifyTestnetAsset(i.assetIssuer);
   const txRes = await fetch(`${HORIZON_TESTNET}/transactions/${hash}`);
-  if (txRes.status === 404) return { ok: false, reasons: ['Transaction not found on Stellar Testnet.'] };
+  if (txRes.status === 404) return { ok: false, verifiedAt: new Date().toISOString(), reasons: ['Transaction not found on Stellar Testnet.'] };
   if (!txRes.ok) throw new Error(`Horizon transaction lookup unavailable (${txRes.status}).`);
   const tx = await txRes.json();
   if (tx.hash !== hash) return { ok: false, reasons: ['Returned transaction hash does not match.'] };
@@ -66,5 +66,5 @@ export async function verifyTestnetPayment(i: VerifyInput): Promise<VerifyResult
     check('Asset issuer', i.assetIssuer.trim(), observed?.asset_issuer ?? null, i.assetIssuer.trim() === DEFAULT_ISSUER && observed?.asset_issuer === DEFAULT_ISSUER),
   ];
   const payment = matched ? { id: matched.id, transactionHash: matched.transaction_hash, successful: matched.transaction_successful, source: matched.from, destination: matched.to, amount: matched.amount, assetCode: matched.asset_code ?? '', assetIssuer: matched.asset_issuer ?? '', createdAt: matched.created_at ?? null } : undefined;
-  return { ...confirmation, verifiedAt: new Date().toISOString(), ok: Boolean(matched), payment, checks, reasons: matched ? [] : ['Network transaction succeeded, but no payment matches the USDC asset, issuer, amount, payer and beneficiary.'] };
+  return { ...confirmation, verifiedAt: new Date().toISOString(), ok: Boolean(matched), ...(payment ? { payment } : {}), checks, reasons: matched ? [] : ['Network transaction succeeded, but no payment matches the USDC asset, issuer, amount, payer and beneficiary.'] };
 }
