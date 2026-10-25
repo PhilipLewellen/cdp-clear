@@ -1,4 +1,9 @@
 # CDP Clear functional workflow
+- [x] Upgrade Overview cash exposure, counterparty flows and settlement next actions.
+- [x] Add isolated GPU-price scenarios and calculation tests.
+- [x] Verify edited figures, scenario isolation and compact layout.
+
+Risk overview checks: base 3100 gross / 1500 net / 1600 reduction (51.6%); +10% hypothetical shock yields 2200 net CP-B to CP-A and 3640 gross. Slider leaves persisted trades unchanged. Edited T-001 quantity 500 updates booked net to 500 and persists after reload. No page errors or document overflow at 800/390 pixels. Funding coverage remains Not available; no wallet balance queried. Previously verified network evidence is distinguished from local reconciliation and never applied to stale snapshots.
 - [x] Add state-driven operations Overview without moving existing URLs.
 - [x] Derive GPU-forward cash obligations from editable economics; preserve saved edits and dates.
 - [x] Clarify manual testnet settlement and prevent duplicate allocation.
