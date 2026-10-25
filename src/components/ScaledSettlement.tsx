@@ -9,10 +9,13 @@ import { inputCls } from '@/lib/ui-classes';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
 import { testPaymentSession } from '@/lib/test-payment-session';
 import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, verifyScaledInstruction, type ScaledInstruction, type SettlementScale } from '@/lib/scaled-settlement';
+import { loadWalletBalances, type WalletBalances } from '@/lib/wallet-balances';
+import { classifyRecovery, isWalletRejection, paymentState, readinessChecks, readyToPay, type Recovery } from '@/lib/settlement-readiness';
 import { prepareScaledPayment, submitScaledPayment, readScaledPayment, paymentError, type PreparedScaledPayment, type ConfirmedScaledPayment } from '@/lib/scaled-payment';
 
 const PENDING_KEY = 'cdp-clear-scaled-payment-pending';
-interface PendingScaled { instructionId: string; hash: string; payment: Omit<PreparedScaledPayment, 'xdr'>; }
+// Signed XDR is public, already-authorised transaction data (no key material); kept so a timeout never loses what was submitted.
+interface PendingScaled { instructionId: string; hash: string; signedXdr?: string; payment: Omit<PreparedScaledPayment, 'xdr'>; }
 
 function useAllocatedHashes(excludeId?: string): string[] {
   const { history, testSettlement } = useStore();
@@ -75,6 +78,14 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
   const [pending, setPending] = useState<PendingScaled | null>(null);
   const [phase, setPhase] = useState('');
   const [error, setError] = useState('');
+  const [balances, setBalances] = useState<WalletBalances | null>(null);
+  const [balancesError, setBalancesError] = useState<string | undefined>();
+  const [network, setNetwork] = useState<{ ok: boolean | null; error?: string; address: string | null }>({ ok: null, address: null });
+  const [outcome, setOutcome] = useState<'rejected' | 'failed' | 'unavailable' | null>(null);
+  const [recovery, setRecovery] = useState<Recovery | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const stage = useRef<'idle' | 'signing' | 'submitting'>('idle');
+  const autoChecked = useRef(false);
   const guard = useRef(false);
   const current = useRef(wallet);
   current.current = wallet;
@@ -89,11 +100,14 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
     } catch { /* Not payment evidence. */ }
   }, []);
   useEffect(() => { if (instruction?.recipient) setRecipient(instruction.recipient); }, [instruction?.recipient]);
+  useEffect(() => { setBalances(null); setNetwork({ ok: null, address: null }); }, [wallet.address, recipient]);
+  // Recovery: after reload, look up a known submitted hash read-only once. Never re-signs or re-sends.
+  useEffect(() => { if (pending && instruction && !autoChecked.current) { autoChecked.current = true; void check(); } });
 
   if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement payment"><div className="module-heading"><h2>Scaled settlement payment</h2><span>Stellar Testnet</span></div><p className="text-sm text-muted-foreground">Generate a scaled settlement instruction in step 2 first. No payment can start without one.</p></section>;
 
-  const remember = (payment: PreparedScaledPayment, hash: string) => {
-    const record: PendingScaled = { instructionId: instruction.id, hash, payment: { source: payment.source, destination: payment.destination, amount: payment.amount, feeXlm: payment.feeXlm, expiresAt: payment.expiresAt } };
+  const remember = (payment: PreparedScaledPayment, hash: string, signedXdr: string) => {
+    const record: PendingScaled = { instructionId: instruction.id, hash, signedXdr, payment: { source: payment.source, destination: payment.destination, amount: payment.amount, feeXlm: payment.feeXlm, expiresAt: payment.expiresAt } };
     setPending(record);
     sessionStorage.setItem(PENDING_KEY, JSON.stringify(record));
     setScaledInstruction({ ...instruction, status: 'Payment Submitted', txHash: hash, payerAddress: payment.source, recipient: payment.destination });
@@ -102,8 +116,19 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
     sessionStorage.removeItem(PENDING_KEY);
     setPending(null);
     setPrepared(null);
+    setRecovery(null); setOutcome(null);
     setScaledInstruction({ ...instruction, status: 'Payment Confirmed', txHash: result.hash, ledger: result.ledger, confirmedAt: new Date().toISOString(), payerAddress: payment.source, recipient: payment.destination, verifiedNote: 'Blockchain transaction confirmed; reconciliation runs in step 4.' });
     onSuccess?.();
+  };
+  const runReadiness = async () => {
+    if (guard.current) return;
+    guard.current = true; setPhase('Running settlement readiness checks…'); setError(''); setBalancesError(undefined);
+    let address: string | null = null;
+    try { address = await current.current.checkConnection(); setNetwork({ ok: true, address }); }
+    catch (e) { setNetwork({ ok: false, error: paymentError(e), address: current.current.address ?? null }); }
+    try { if (address) setBalances(await loadWalletBalances(address, recipient.trim())); }
+    catch (e) { setBalances(null); setBalancesError(`${paymentError(e)} Treated as unverified, not passed.`); }
+    finally { guard.current = false; setPhase(''); }
   };
   const review = async () => {
     if (guard.current || testPaymentSession.locked || pending || paid) return;
@@ -123,34 +148,62 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
       if (await current.current.checkConnection() !== prepared.source) throw new Error('Connected payer changed. Review again.');
       const fresh = await prepareScaledPayment(prepared.source, prepared.destination, instruction.usdcAmount);
       if (fresh.feeXlm !== prepared.feeXlm) { setPrepared(fresh); throw new Error('Network fee changed. Review the updated fee and confirm again.'); }
-      setPhase('Awaiting your approval in Freighter…');
+      setPhase('Awaiting your approval in Freighter…'); stage.current = 'signing';
       const signed = await current.current.signTransaction(fresh.xdr);
       if (!signed) throw new Error('Freighter returned no signature. No payment submitted.');
       if (await current.current.checkConnection() !== fresh.source) throw new Error('Wallet changed after signing. Nothing submitted.');
-      setPhase('Submitting and confirming on Stellar Testnet…');
-      const result = await submitScaledPayment(fresh, signed, hash => remember(fresh, hash));
-      if (result) finish(result, fresh);
-      else setError('Confirmation is pending. Check status below; do not send another payment.');
-    } catch (e) { setError(paymentError(e)); }
-    finally { guard.current = false; testPaymentSession.locked = false; setPhase(''); }
+      setPhase('Submitting and confirming on Stellar Testnet…'); stage.current = 'submitting';
+      let submitted = false;
+      try {
+        const result = await submitScaledPayment(fresh, signed, hash => { submitted = true; remember(fresh, hash, signed); });
+        if (result) finish(result, fresh);
+        else { setRecovery('pending'); setError('Confirmation is pending. Check status below; do not send another payment.'); }
+      } catch (e) {
+        if (!submitted) throw e;
+        // Outcome uncertain after submission: never assume failure.
+        setOutcome('unavailable'); setError(`${paymentError(e)} The payment may still be applied. Check its status read-only; do not resend.`);
+      }
+    } catch (e) {
+      const message = paymentError(e);
+      setOutcome(stage.current === 'signing' && isWalletRejection(message) ? 'rejected' : 'failed');
+      setError(stage.current === 'signing' && isWalletRejection(message) ? `Signature rejected in Freighter. No payment was submitted. ${message}` : message);
+    }
+    finally { guard.current = false; testPaymentSession.locked = false; setPhase(''); stage.current = 'idle'; }
   };
   const check = async () => {
     if (!pending || guard.current || testPaymentSession.locked) return;
     guard.current = true; setPhase('Checking submitted transaction…'); setError('');
     try {
-      const result = await readScaledPayment(pending.hash, { ...pending.payment, xdr: '' });
-      if (result) finish(result, pending.payment);
-      else setError('Not confirmed yet. Do not resend; check again later.');
-    } catch (e) { setError(`${paymentError(e)} Do not resend until the transaction outcome is resolved.`); }
+      let lookup: Parameters<typeof classifyRecovery>[0];
+      let found: ConfirmedScaledPayment | null = null;
+      try { found = await readScaledPayment(pending.hash, { ...pending.payment, xdr: '' }); lookup = { found: Boolean(found), confirmed: Boolean(found) }; }
+      catch (e) { const m = paymentError(e); lookup = /failed on Stellar/.test(m) ? { found: true, failed: true } : 'error'; if (lookup === 'error') setError(`${m} Do not resend until the transaction outcome is resolved.`); }
+      const r = classifyRecovery(lookup, pending.payment.expiresAt);
+      setRecovery(r);
+      if (r === 'confirmed' && found) finish(found, pending.payment);
+      else if (r === 'pending') { setOutcome(null); setError('Not found on Stellar Testnet yet. Confirmation Pending — do not resend; check again later.'); }
+      else if (r === 'unavailable') setOutcome('unavailable');
+      else if (r === 'failed-on-chain') setError('The transaction failed on Stellar Testnet. No USDC moved.');
+      else if (r === 'expired-not-found') setError('The signed transaction expired without reaching the ledger, so it can no longer be applied.');
+    }
     finally { guard.current = false; setPhase(''); }
   };
 
+  const discard = () => {
+    if (!pending || (recovery !== 'expired-not-found' && recovery !== 'failed-on-chain')) return;
+    sessionStorage.removeItem(PENDING_KEY);
+    if (instruction.txHash === pending.hash && instruction.status === 'Payment Submitted') setScaledInstruction({ ...instruction, status: 'Instruction Created', txHash: '', verifiedNote: `Earlier attempt ${pending.hash.slice(0, 8)}… resolved as not applied (${recovery === 'failed-on-chain' ? 'failed on-chain' : 'expired, never on ledger'}).` });
+    setPending(null); setRecovery(null); setConfirmDiscard(false); setError(''); setOutcome(null);
+  };
   const unchanged = snapshotUnchanged(instruction, trades);
+  const checks = readinessChecks({ instruction, trades, wallet: { address: network.address ?? wallet.address ?? null, networkOk: network.address === wallet.address ? network.ok : null, networkError: network.error }, balances, balancesError, unresolvedHash: pending?.hash ?? null });
+  const allReady = readyToPay(checks);
+  const pState = paymentState({ instruction, phase: stage.current === 'idle' ? 'idle' : stage.current, unresolvedHash: pending?.hash ?? null, outcome });
   const lifecycle = settlementLifecycle(instruction, Boolean(prepared) || phase.startsWith('Awaiting'));
   return <section className="settlement-section" aria-label="Scaled settlement payment">
     <div className="module-heading"><h2>Scaled settlement payment</h2><span>{instruction.id} · Stellar Testnet</span></div>
     <p className="mb-4 text-xs text-warning">{instruction.usdcAmount} USDC test tokens settle the scaled portfolio only. The original {fmt(instruction.originalNet, 'USD')} obligation is not discharged.</p>
-    <p className="mb-4 text-sm">Settlement status <span className={`ml-2 font-medium ${statusTone(instruction.status)}`}>{lifecycle}</span></p>
+    <p className="mb-4 text-sm">Settlement status <span className={`ml-2 font-medium ${statusTone(instruction.status)}`}>{lifecycle}</span><span className="ml-3 text-xs text-muted-foreground">Payment state · <span className="font-medium text-foreground" data-testid="payment-state">{pState}</span></span></p>
     <dl className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Instruction ID</dt><dd className="font-mono">{instruction.id}</dd>
       <dt className="text-muted-foreground">Source netting result</dt><dd className="font-mono">NS-AB-001 · {fmt(instruction.originalGross, 'USD')} gross → {fmt(instruction.originalNet, 'USD')} net · CP-{instruction.payer} pays CP-{instruction.beneficiary}</dd>
@@ -168,8 +221,16 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
     {!unchanged && <p role="alert" className="mt-4 text-xs text-warning">The portfolio changed after this instruction was generated. Payment is blocked; generate a new instruction in step 2.</p>}
     {instruction.status === 'Instruction Created' && unchanged && !pending && <>
       <label className="mt-4 block text-xs text-muted-foreground">Recipient public address (CP-{instruction.beneficiary} wallet)<input aria-label="Scaled settlement recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
+      {wallet.status === 'connected' && <section aria-label="Settlement readiness" className="mt-4 rounded border border-border bg-card p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-medium">Settlement Readiness</h3><span className="text-xs text-muted-foreground">{instruction.usdcAmount} USDC · Stellar Testnet · CP-{instruction.payer} → CP-{instruction.beneficiary}</span></div>
+        <ul className="mt-3 grid gap-1.5 text-xs">{checks.map(c => <li key={c.id} className="flex flex-wrap justify-between gap-x-3"><span>{c.label}</span><span className={c.status === 'Passed' ? 'text-success' : c.status === 'Failed' ? 'text-destructive' : 'text-warning'}>{c.status}</span><span className="w-full text-muted-foreground">{c.detail}</span></li>)}</ul>
+        <details className="mt-3 text-xs"><summary className="cursor-pointer text-muted-foreground">Technical details</summary><dl className="mt-2 grid grid-cols-[90px_minmax(0,1fr)] gap-1.5"><dt>Payer</dt><dd className="break-all font-mono">{wallet.address}</dd><dt>Recipient</dt><dd className="break-all font-mono">{recipient || '—'}</dd><dt>Asset</dt><dd className="break-all font-mono">{instruction.assetCode} · {instruction.assetIssuer}</dd><dt>Checked</dt><dd className="font-mono">{balances?.checkedAt ?? 'Not yet'}</dd></dl><p className="mt-2 text-muted-foreground">Missing or unavailable network data is shown as Unable to verify and blocks payment.</p></details>
+        <p className="mt-3 text-xs">{allReady ? 'All mandatory checks passed. Next: review the payment.' : `${checks.filter(c => c.status !== 'Passed').length} check(s) not passed. Next: ${balances ? 'resolve the blocking items and re-run.' : 'run the readiness check.'}`}</p>
+      </section>}
       {wallet.status === 'connected'
-        ? <Button className="mt-3" disabled={busy || !recipient} onClick={review}><Send className="size-3.5" />Review Payment</Button>
+        ? (allReady
+          ? <Button className="mt-3" disabled={busy || !recipient} onClick={review}><Send className="size-3.5" />Review Payment</Button>
+          : <Button className="mt-3" disabled={busy || !recipient} onClick={runReadiness}><RefreshCw className="size-3.5" />Check Settlement Readiness</Button>)
         : <Button className="mt-3" disabled={busy || wallet.status === 'loading'} onClick={wallet.connect}>Connect Wallet</Button>}
       {wallet.status !== 'connected' && <p className="mt-2 text-xs text-muted-foreground">{wallet.error ?? 'Connect Freighter on Stellar Testnet.'} The connected account pays as CP-{instruction.payer}.</p>}
     </>}
@@ -180,7 +241,11 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
     </div>}
     {busy && <p role="status" className="mt-3 text-xs text-primary">{phase}</p>}
     {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
-    {pending && !paid && <div className="mt-3 text-xs"><p>Submission outcome unresolved. Another payment is blocked, including after reload in this tab.</p><Button variant="outline" className="mt-2" disabled={busy || testPaymentSession.locked} onClick={check}><RefreshCw className="size-3.5" />Check payment status</Button></div>}
+    {pending && !paid && <div className="mt-3 text-xs"><p>Submission outcome unresolved. Another payment is blocked, including after reload in this tab.</p><p className="mt-1 break-all font-mono text-muted-foreground">{pending.hash}</p><Button variant="outline" className="mt-2" disabled={busy || testPaymentSession.locked} onClick={check}><RefreshCw className="size-3.5" />Check payment status (read-only)</Button>
+      {(recovery === 'expired-not-found' || recovery === 'failed-on-chain') && (confirmDiscard
+        ? <div className="mt-3 flex flex-wrap gap-2"><Button variant="destructive" onClick={discard}>Confirm: close this attempt</Button><Button variant="outline" onClick={() => setConfirmDiscard(false)}>Cancel</Button></div>
+        : <Button variant="outline" className="mt-3" onClick={() => setConfirmDiscard(true)}>Close resolved attempt to allow a new payment</Button>)}
+      <p className="mt-2 text-[10px] text-muted-foreground">Duplicate protection is browser-local to this tab and session; it is not an institution-wide exactly-once guarantee.</p></div>}
     {paid && <div role="status" className="mt-4 text-xs text-success"><p>Payment {instruction.status === 'Reconciled' ? 'reconciled' : 'submitted'} · transaction recorded on Stellar Testnet{instruction.ledger ? ` · Ledger ${instruction.ledger}` : ''}.</p><p className="mt-2 break-all font-mono">{instruction.txHash}</p><a className="mt-2 inline-block text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect transaction on Stellar Expert ↗</a>{onViewVerified && <div><Button className="mt-3" onClick={onViewVerified}>View Confirmed Payment<ArrowRight className="size-3.5" /></Button></div>}</div>}
     <p className="mt-3 text-[10px] text-muted-foreground">Freighter signs locally. Never enter a seed phrase or private key. Payment is never initiated by changing the scale, generating an instruction or refreshing market prices.</p>
   </section>;
