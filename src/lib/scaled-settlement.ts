@@ -49,6 +49,7 @@ export interface ScaledInstruction {
   network: string;
   snapshot: string;
   recipient: string;
+  payerAddress: string;
   status: ScaledStatus;
   txHash: string;
   ledger?: number | undefined;
