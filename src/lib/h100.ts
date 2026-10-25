@@ -38,8 +38,8 @@ export function parseH100(payload: unknown): H100Observation | null {
     terms: text(h100?.terms),
     chg1d: change(h100?.chg_1d),
     chg7d: change(h100?.chg_7d),
-    updated: text(root.updated),
-    methodologyVersion: text(root.methodology_version),
+    updated: text(root['updated']),
+    methodologyVersion: text(root['methodology_version']),
     fetchedAt: new Date().toISOString(),
   };
 }
