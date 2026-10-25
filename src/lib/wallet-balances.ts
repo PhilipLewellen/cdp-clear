@@ -6,7 +6,7 @@ export const USDC_ASSET = { code: 'USDC', issuer: DEFAULT_ISSUER } as const;
 interface BalanceRow {
   asset_type: string; asset_code?: string; asset_issuer?: string;
   balance: string; selling_liabilities?: string; buying_liabilities?: string;
-  limit?: string; is_authorized?: boolean;
+  limit?: string; is_authorized?: boolean; is_authorized_to_maintain_liabilities?: boolean;
 }
 interface AccountData {
   account_id: string; balances: BalanceRow[]; subentry_count: number;

@@ -17,7 +17,8 @@ describe('shared wallet balance state', () => {
     const view = render(panel());
     await waitFor(() => expect(loadWalletBalances).toHaveBeenCalledWith(source, destination));
     await screen.findByText('Balance prerequisites met at lookup · execution disabled');
-    view.rerender(panel({ ...connection, status: 'disconnected', address: undefined }));
+    const { address: _address, ...disconnected } = connection;
+    view.rerender(panel({ ...disconnected, status: 'disconnected' }));
     expect(screen.queryByText('Balance prerequisites met at lookup · execution disabled')).not.toBeInTheDocument();
     expect(screen.getByText('Not checked · connect a Testnet wallet')).toBeInTheDocument();
   });

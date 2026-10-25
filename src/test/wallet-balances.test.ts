@@ -72,7 +72,7 @@ describe('Phase 2 read-only account funding checks', () => {
   });
   it('loads both accounts through SDK loadAccount and reports 404 without fabricated balances', async () => {
     vi.spyOn(Horizon.Server.prototype, 'root').mockResolvedValue({ network_passphrase: TESTNET_PASSPHRASE } as Awaited<ReturnType<Horizon.Server['root']>>);
-    vi.spyOn(Horizon.Server.prototype, 'ledgers').mockReturnValue({ order: () => ({ limit: () => ({ call: async () => ({ records: [{ base_reserve_in_stroops: 5000000, base_fee_in_stroops: 100 }] }) }) }) } as ReturnType<Horizon.Server['ledgers']>);
+    vi.spyOn(Horizon.Server.prototype, 'ledgers').mockReturnValue({ order: () => ({ limit: () => ({ call: async () => ({ records: [{ base_reserve_in_stroops: 5000000, base_fee_in_stroops: 100 }] }) }) }) } as unknown as ReturnType<Horizon.Server['ledgers']>);
     const load = vi.spyOn(Horizon.Server.prototype, 'loadAccount').mockImplementation(async address => {
       if (address === destination) throw { response: { status: 404 } };
       return account(address) as Awaited<ReturnType<Horizon.Server['loadAccount']>>;
