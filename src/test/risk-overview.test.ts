@@ -40,6 +40,12 @@ describe('Settlement overview evidence', () => {
   it('does not label a supplied hash as verified blockchain evidence', () => {
     expect(overviewSettlement(SAMPLE_OBLIGATIONS, { ...instruction, status: 'Pending Authorisation', txHash: 'a'.repeat(64) }, []).verified).toBe(false);
   });
+  it('routes confirmed instructions to review rather than another payment', () => {
+    expect(overviewSettlement(SAMPLE_OBLIGATIONS, { ...instruction, status: 'Confirmed' }, []).action.label).toBe('Review verification and reconcile');
+  });
+  it('does not propose USDC settlement for non-USD cash obligations', () => {
+    expect(overviewSettlement(SAMPLE_OBLIGATIONS.map(trade => ({ ...trade, currency: 'EUR' })), null, []).action.to).toBe('/');
+  });
   it('never applies old instruction evidence to changed booked obligations', () => {
     const state = overviewSettlement(SAMPLE_OBLIGATIONS.slice(1), { ...instruction, status: 'Reconciled', confirmedAt: '2026-10-25', issuerVerifiedAt: '2026-10-25', txHash: 'a'.repeat(64) }, []);
     expect(state.current).toBeNull(); expect(state.verified).toBe(false); expect(state.stale).toBe(true);

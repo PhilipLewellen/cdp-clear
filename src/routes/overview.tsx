@@ -52,7 +52,7 @@ function Overview() {
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Net amount payable</dt><dd className="text-right font-mono">{fmt(r.net,r.currency)}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Instruction lifecycle</dt><dd className="text-right"><Tag tone={monitor.status === 'Reconciled' ? 'success' : 'primary'}>{monitor.status}</Tag></dd></div>
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Instruction ID</dt><dd className="text-right font-mono break-all">{monitor.current?.id ?? 'Not generated for current obligations'}</dd></div>
-            <div className="flex justify-between gap-4"><dt className="text-muted-foreground">On-chain verification</dt><dd className="text-right">{monitor.verified ? monitor.current?.status === 'Reconciled' ? 'Verified · matched and reconciled' : 'Transaction confirmed · reconciliation unresolved' : 'Not verified'}</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-muted-foreground">On-chain verification</dt><dd className="text-right">{monitor.verified ? monitor.current?.status === 'Reconciled' ? 'Previously verified · matched; reconciled locally' : 'Previously confirmed · payment match requires review' : 'Not verified'}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Funding coverage</dt><dd className="text-right">Not available</dd></div>
           </dl>
           <p className="mt-3 text-[11px] text-muted-foreground">No verified payer-wallet balance queried for the exact testnet issuer.</p>

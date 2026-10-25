@@ -29,10 +29,13 @@ export function overviewSettlement(trades: Obligation[], instruction: Instructio
   const action: { label: string; to: '/' | '/netting' | '/settlement' } = !trades.length || !net.ok
     ? { label: 'Review obligations', to: '/' }
     : !net.net ? { label: 'Review netting · no payment required', to: '/netting' }
+    : net.currency !== 'USD' ? { label: 'Review contractual currency', to: '/' }
     : trades.some(trade => trade.lifecycle === 'Captured') ? { label: 'Validate trades', to: '/' }
     : !current ? { label: 'Calculate Net / Generate Instruction', to: '/netting' }
     : current.status === 'Reconciled' ? { label: 'Review reconciliation', to: '/settlement' }
     : current.status === 'Draft' ? { label: 'Validate instruction', to: '/settlement' }
+    : current.status === 'Validated' ? { label: 'Review external payment steps', to: '/settlement' }
+    : current.status === 'Confirmed' ? { label: 'Review verification and reconcile', to: '/settlement' }
     : current.status === 'Failed' || current.status === 'Exception' ? { label: 'Review exception / Retry verification', to: '/settlement' }
     : { label: 'Verify Settlement', to: '/settlement' };
   return { current, status, action, stale, verified };
