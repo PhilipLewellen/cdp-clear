@@ -102,7 +102,7 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
   useEffect(() => { if (instruction?.recipient) setRecipient(instruction.recipient); }, [instruction?.recipient]);
   useEffect(() => { setBalances(null); setNetwork({ ok: null, address: null }); }, [wallet.address, recipient]);
   // Recovery: after reload, look up a known submitted hash read-only once. Never re-signs or re-sends.
-  useEffect(() => { if (pending && !autoChecked.current) { autoChecked.current = true; void check(); } });
+  useEffect(() => { if (pending && instruction && !autoChecked.current) { autoChecked.current = true; void check(); } });
 
   if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement payment"><div className="module-heading"><h2>Scaled settlement payment</h2><span>Stellar Testnet</span></div><p className="text-sm text-muted-foreground">Generate a scaled settlement instruction in step 2 first. No payment can start without one.</p></section>;
 
