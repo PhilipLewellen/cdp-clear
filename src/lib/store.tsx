@@ -5,6 +5,7 @@ import { instructionActivity, type ActivityEvent } from './activity';
 import { StoreContext } from './store-context';
 import { createTestSettlement, TEST_RECORD_ID, type TestSettlement } from './test-reconciliation';
 import { savedPayment } from './payment-evidence';
+import type { ScaledInstruction } from './scaled-settlement';
 const KEY = "cdp-clear-v1";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -34,6 +35,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (event) recordActivity(event);
     updateInstruction(i);
     if (i?.status === 'Reconciled') setHistory(previous => [...previous.filter(row => row.id !== i.id), i]);
+  };
+  const [scaledInstruction, updateScaledInstruction] = useState<ScaledInstruction | null>(null);
+  const setScaledInstruction = (next: ScaledInstruction | null) => {
+    if (next && next.id !== scaledInstruction?.id) recordActivity({ category: 'Demo operation', action: 'Scaled instruction generated', reference: next.id, detail: `${next.usdcAmount} testnet USDC · 1:${next.divisor.toLocaleString('en-US')} scale · No payment initiated`, lifecycle: next.status });
+    else if (next && next.status !== scaledInstruction?.status) recordActivity({ category: next.status === 'Reconciled' && next.confirmedAt && next.txHash ? 'Network evidence' : 'Demo operation', action: next.status === 'Reconciled' ? 'Scaled settlement reconciled' : `Scaled instruction ${next.status.toLowerCase()}`, reference: next.id, detail: next.txHash ? `Stellar Testnet · ${next.txHash}` : (next.verifiedNote ?? ''), lifecycle: next.status });
+    updateScaledInstruction(next);
   };
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
