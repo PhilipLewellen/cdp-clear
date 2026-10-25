@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { Shell, Tag, Term } from '@/components/Shell';
 import { ManualSettlement } from '@/components/ManualSettlement';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
+import { TestSettlementPayment } from '@/components/TestSettlementPayment';
 import { inputCls } from '@/lib/ui-classes';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2, FilePlus2, Search, ShieldCheck, Trash2 } from 'lucide-react';
@@ -29,6 +30,7 @@ function Settlement() {
   const [form, setForm] = useState({ assetIssuer: DEFAULT_ISSUER, source: '', destination: '' });
   const [hash, setHash] = useState('');
   const [busy, setBusy] = useState(false);
+  const [balanceRefresh, setBalanceRefresh] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<VerifyResult | null>(null);
   const [manualAck, setManualAck] = useState(false);
@@ -98,7 +100,7 @@ function Settlement() {
   const selected = rows.find(row => row.id === selectedId);
   return <Shell title="Settlement & Reconciliation" intro="USDC cash-leg operations / NS-AB-001 · Independent testnet verification">
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-2 text-[10px] text-muted-foreground">
-      <span>Payment Initiation <b className="ml-1 font-normal text-warning">Not Implemented</b></span><span>Wallet Signing <b className="ml-1 font-normal text-warning">Not Implemented</b></span><span>Testnet Transaction Verification <b className="ml-1 font-normal text-primary">Implemented</b></span>
+      <span>Separate 1 USDC Test Payment <b className="ml-1 font-normal text-primary">Freighter enabled</b></span><span>Simulated Obligation Payment <b className="ml-1 font-normal text-warning">External only</b></span><span>Testnet Transaction Verification <b className="ml-1 font-normal text-primary">Implemented</b></span>
     </div>
     <div className="settlement-workspace">
       <div className="settlement-side">
@@ -126,7 +128,8 @@ function Settlement() {
       </section>
       </div>
       <div className="settlement-side">
-        <WalletSettlementAsset amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
+        <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
+        <WalletSettlementAsset refreshVersion={balanceRefresh} amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
         {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
       <section className="settlement-section">
         <div className="module-heading"><h2>{instruction ? 'Selected net settlement instruction' : 'Generate net settlement instruction'}</h2><span>{instruction?.id ?? 'New instruction'}</span></div>
@@ -158,7 +161,7 @@ function Settlement() {
       </section>        </>}
       </div>
     </div>
-    <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Payment authorisation and execution remain external; Supplying a hash records only a local verification request; no submission is claimed. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
+    <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Simulated-obligation payment remains external; the separate 1 USDC Freighter test payment never changes instruction state; Supplying a hash records only a local verification request; no submission is claimed. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
     {msg && <p role="status" className="border-l-2 border-warning pl-3 text-xs text-warning">{msg}</p>}
   </Shell>;
 }

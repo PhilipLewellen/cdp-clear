@@ -5,9 +5,9 @@ import { useFreighter } from '@/hooks/use-freighter';
 import { inputCls } from '@/lib/ui-classes';
 import { fundingChecks, loadWalletBalances, USDC_ASSET, type WalletBalances } from '@/lib/wallet-balances';
 
-export function WalletSettlementAsset({ amount, source, beneficiary, issuer, onBeneficiaryChange, onUsePayer }: {
+export function WalletSettlementAsset({ amount, source, beneficiary, issuer, onBeneficiaryChange, onUsePayer, refreshVersion = 0 }: {
   amount: number; source: string; beneficiary: string; issuer: string;
-  onBeneficiaryChange?: (address: string) => void; onUsePayer?: (address: string) => void;
+  onBeneficiaryChange?: (address: string) => void; onUsePayer?: (address: string) => void; refreshVersion?: number;
 }) {
   const wallet = useFreighter();
   const [refresh, setRefresh] = useState(0);
@@ -17,7 +17,7 @@ export function WalletSettlementAsset({ amount, source, beneficiary, issuer, onB
   const connectionCheck = useRef(wallet.checkConnection);
   connectionCheck.current = wallet.checkConnection;
   const address = wallet.status === 'connected' ? wallet.address : undefined;
-  const key = JSON.stringify([address, beneficiary, refresh]);
+  const key = JSON.stringify([address, beneficiary, refresh, refreshVersion]);
   useEffect(() => {
     let cancelled = false;
     if (!address) return;
