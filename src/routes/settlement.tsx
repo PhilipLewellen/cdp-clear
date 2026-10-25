@@ -1,13 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Shell, Tag, Term } from '@/components/Shell';
+import { ManualSettlement } from '@/components/ManualSettlement';
 import { inputCls } from '@/lib/ui-classes';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2, FilePlus2, Search, ShieldCheck, Trash2 } from 'lucide-react';
 import { useStore } from '@/lib/use-store';
 import { fmt, netObligations } from '@/lib/netting';
 import { DEFAULT_ISSUER, NETWORK, verifyTestnetAsset, verifyTestnetPayment, type VerifyResult } from '@/lib/stellar';
-import { LIFECYCLE, obligationSnapshot, publicAddress, reconcileInstruction, type Instruction } from '@/lib/settlement';
+import { LIFECYCLE, obligationSnapshot, publicAddress, reconcileInstruction, settledSnapshot, type Instruction } from '@/lib/settlement';
 
 export const Route = createFileRoute('/settlement')({
   head: () => ({ meta: [
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/settlement')({
 });
 
 function Settlement() {
-  const { trades, instruction, history, setInstruction } = useStore();
+  const { trades, instruction, history, setInstruction, recordActivity } = useStore();
   const r = netObligations(trades);
   const [form, setForm] = useState({ assetIssuer: DEFAULT_ISSUER, source: '', destination: '' });
   const [hash, setHash] = useState('');
@@ -33,7 +34,8 @@ function Settlement() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const current = useRef({ trades, instruction, history });
   current.current = { trades, instruction, history };
-  const canCreate = r.ok && r.net > 0 && r.payer && r.payee && publicAddress(form.source) && publicAddress(form.destination) && form.source.trim() !== form.destination.trim() && publicAddress(form.assetIssuer);
+  const alreadySettled = settledSnapshot(trades, history);
+  const canCreate = !alreadySettled && r.currency === 'USD' && r.ok && r.net > 0 && r.payer && r.payee && publicAddress(form.source) && publicAddress(form.destination) && form.source.trim() !== form.destination.trim() && publicAddress(form.assetIssuer);
   const unchanged = instruction?.obligationSnapshot === obligationSnapshot(trades);
   const create = () => {
     if (!canCreate || !r.payer || !r.payee) return;
@@ -60,14 +62,15 @@ function Settlement() {
     finally { setBusy(false); }
   };
   const verify = async () => {
-    if (!instruction || !/^[0-9a-fA-F]{64}$/.test(hash.trim())) return;
+    if (!instruction || busy || instruction.status === 'Reconciled' || !unchanged || !instruction.issuerVerifiedAt || !/^[0-9a-fA-F]{64}$/.test(hash.trim())) return;
     const txHash = hash.trim().toLowerCase();
     if (history.some(row => row.txHash === txHash && row.id !== instruction.id)) {
       setInstruction({ ...instruction, status: 'Exception', verifiedNote: 'Transaction already allocated to a reconciled instruction.' });
       setMsg('Duplicate settlement rejected. Use a new payment transaction.'); return;
     }
     setBusy(true); setMsg(null); setEvidence(null);
-    const submitted: Instruction = { ...instruction, txHash, status: 'Submitted', confirmedAt: undefined, reconciledAt: undefined, ledger: undefined };
+    recordActivity({ category: 'Demo operation', action: 'Verification requested', reference: instruction.id, lifecycle: 'Verification pending', detail: `Read-only Horizon Testnet lookup · ${txHash} · No payment initiated` });
+    const submitted: Instruction = { ...instruction, txHash, status: 'Pending Authorisation', confirmedAt: undefined, reconciledAt: undefined, ledger: undefined };
     setInstruction(submitted);
     try {
       const result = await verifyTestnetPayment({ ...submitted, hash: txHash });
@@ -114,6 +117,9 @@ function Settlement() {
         <dl className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 gap-y-2.5"><Row label="Netting set" value="NS-AB-001" /><Row label="Instruction reference" value={instruction?.id ?? 'Not generated'} /><Row label="Net payer / beneficiary" value={`CP-${instruction?.payer ?? r.payer ?? '—'} → CP-${instruction?.beneficiary ?? r.payee ?? '—'}`} /><Row label="Settlement network" value={NETWORK} /><dt className="text-muted-foreground">Lifecycle state</dt><dd><Tag tone={instruction?.status === 'Reconciled' ? 'success' : 'primary'}>{instruction?.status ?? 'Uninstructed'}</Tag></dd></dl>
         <p className="mt-4 text-xs text-muted-foreground">Illustrative 1:1 assumption: 1 {currency} = 1 testnet USDC. No real funds.</p>
         {!r.ok && <p role="alert" className="mt-3 text-xs text-destructive">{r.error}</p>}
+        {alreadySettled && <p className="mt-3 text-xs text-success">This obligation snapshot is already Reconciled. A second instruction is blocked.</p>}
+        {!trades.length && <Button asChild variant="outline" className="mt-3"><Link to="/">Add or restore GPU forwards</Link></Button>}
+        {r.currency !== 'USD' && <p className="mt-3 text-xs text-warning">USDC proposal requires contractual USD obligations; no currency conversion is implemented.</p>}
         {r.ok && r.net === 0 && <p className="mt-3 text-xs text-muted-foreground">Zero NSO — no cash-leg instruction required.</p>}
         {instruction && !unchanged && <p role="alert" className="mt-3 text-xs text-destructive">Netting set changed. Discard this instruction and create a new one before reconciliation.</p>}
       </section>
@@ -121,7 +127,7 @@ function Settlement() {
       <div className="settlement-side">
         {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
       <section className="settlement-section">
-        <div className="module-heading"><h2>Stablecoin settlement details</h2><span>{instruction?.id ?? 'New instruction'}</span></div>
+        <div className="module-heading"><h2>{instruction ? 'Selected net settlement instruction' : 'Generate net settlement instruction'}</h2><span>{instruction?.id ?? 'New instruction'}</span></div>
         {!instruction ? <>
           <div className="grid grid-cols-[70px_minmax(0,1fr)] gap-3"><Field label="Asset code"><input aria-label="Asset code" className={inputCls} value="USDC" readOnly /></Field><Field label="Proposed testnet issuer · validation required"><input aria-label="Asset issuer" className={inputCls} value={form.assetIssuer} onChange={e => { if (!e.target.value.trim().startsWith('S')) setForm({ ...form, assetIssuer: e.target.value }); else setMsg('Secret keys are not accepted.'); }} />{form.assetIssuer && !publicAddress(form.assetIssuer) && <span className="mt-1 block text-destructive">Enter a valid public G-address.</span>}</Field></div>
           <div className="mt-4"><Field label={`Source Stellar wallet · CP-${r.payer ?? '—'}`}><input aria-label="Payer public wallet" className={inputCls} placeholder="G… public Stellar Testnet address" value={form.source} onChange={e => { if (!e.target.value.trim().startsWith('S')) setForm({ ...form, source: e.target.value }); else setMsg('Secret keys are not accepted. Enter a public G-address only.'); }} />{form.source && !publicAddress(form.source) && <span className="mt-1 block text-destructive">Enter a valid public G-address.</span>}</Field></div>
@@ -129,7 +135,7 @@ function Settlement() {
           <p className="mt-3 text-[10px] text-muted-foreground">Exact issuer validation required. Genuine Circle USDC is not assumed.</p>
           <Button className="mt-4" disabled={!canCreate} onClick={create}><FilePlus2 className="size-3.5" />Create draft instruction</Button>
         </> : <>
-          <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-4 gap-y-3"><Row label="Asset / network" value={`${instruction.assetCode} / ${NETWORK}`} /><Row label="Exact issuer" value={instruction.assetIssuer} /><Row label="Issuer validation" value={instruction.issuerVerifiedAt ? 'Verified on Stellar Testnet' : 'Not independently validated'} /><Row label="Source wallet" value={instruction.source} /><Row label="Beneficiary wallet" value={instruction.destination} /><Row label="Settlement amount" value={`${instruction.amount.toFixed(2)} USDC`} /><Row label="Created" value={instruction.createdAt} /><Row label="Transaction reference" value={instruction.txHash || 'Not supplied'} /></dl>
+          <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-4 gap-y-3"><Row label="Instruction ID" value={instruction.id} /><Row label="Payer / beneficiary" value={`CP-${instruction.payer} → CP-${instruction.beneficiary}`} /><Row label="USD obligation" value={fmt(instruction.amount,instruction.currency)} /><Row label="Lifecycle" value={instruction.status} /><Row label="Asset / network" value={`${instruction.assetCode} / ${NETWORK}`} /><Row label="Exact issuer" value={instruction.assetIssuer} /><Row label="Issuer validation" value={instruction.issuerVerifiedAt ? 'Verified on Stellar Testnet' : 'Not independently validated'} /><Row label="Source wallet" value={instruction.source} /><Row label="Beneficiary wallet" value={instruction.destination} /><Row label="Settlement amount" value={`${instruction.amount.toFixed(2)} USDC`} /><Row label="Created" value={instruction.createdAt} /><Row label="Transaction reference" value={instruction.txHash || 'Not supplied'} /></dl>
           <p className="mt-4 text-[10px] text-muted-foreground">Issuer matching does not attest Circle identity, reserves or redemption rights.</p>
           {instruction.status === 'Draft' && <Button className="mt-4" onClick={validate} disabled={busy || !unchanged}><ShieldCheck className="size-3.5" />{busy ? 'Validating…' : 'Validate instruction & issuer'}</Button>}
           {instruction.status === 'Validated' && <Button variant="outline" className="mt-4" onClick={() => setInstruction({ ...instruction, status: 'Pending Authorisation' })}><ArrowRight className="size-3.5" />Queue for external authorisation</Button>}
@@ -140,16 +146,17 @@ function Settlement() {
         <div className="module-heading"><h2>On-chain confirmation & reconciliation</h2></div>
         
         {instruction ? <>
+          {instruction.issuerVerifiedAt && instruction.status !== 'Reconciled' && <ManualSettlement instruction={instruction} />}
           {['Pending Authorisation', 'Submitted', 'Failed', 'Exception', 'Confirmed'].includes(instruction.status) && <><Field label="External transaction hash"><input aria-label="External transaction hash" className={inputCls} placeholder="64-character transaction hash" value={hash} onChange={e => setHash(e.target.value)} />{hash && !/^[0-9a-fA-F]{64}$/.test(hash.trim()) && <span className="mt-1 block text-destructive">Enter exactly 64 hexadecimal characters.</span>}</Field><Button className="mt-3" onClick={verify} disabled={busy || !instruction.issuerVerifiedAt || !/^[0-9a-fA-F]{64}$/.test(hash.trim()) || !unchanged}><Search className="size-3.5" />{busy ? 'Verifying testnet…' : 'Verify network transaction'}</Button></>}
           <div className="mt-4 border-y border-border py-3"><div className="mb-2 text-[10px] text-muted-foreground">NETWORK CONFIRMATION</div><p className="text-xs">{instruction.confirmedAt ? `Independently confirmed · Ledger ${instruction.ledger}` : 'No independently verified successful transaction.'}</p>{instruction.confirmedAt && <><p className="mt-1 font-mono text-[10px] text-muted-foreground">{instruction.confirmedAt}</p><a className="mt-2 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a></>}</div>
           <div className="mt-4"><div className="mb-2 text-[10px] text-muted-foreground">POST-TRADE RECONCILIATION</div><p className="text-xs text-muted-foreground">{instruction.verifiedNote ?? 'Pending network confirmation and matching against the obligation.'}</p>{instruction.status === 'Confirmed' && <Button className="mt-3" onClick={reconcile} disabled={!evidence}><CheckCircle2 className="size-3.5" />Reconcile cash-leg obligation</Button>}{instruction.status === 'Confirmed' && !evidence && <p className="mt-2 text-[10px] text-warning">Re-verify the hash after reopening this page before reconciliation.</p>}</div>
           {instruction.status === 'Exception' && <details className="mt-4 text-xs"><summary className="cursor-pointer text-muted-foreground">Manual operator review</summary><label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={manualAck} onChange={e => setManualAck(e.target.checked)} /><span>External review only; does not confirm or reconcile settlement.</span></label><Button variant="outline" className="mt-3" disabled={!manualAck} onClick={() => setInstruction({ ...instruction, status: 'Exception', verifiedNote: 'Manual operator review recorded — NOT independently confirmed or reconciled.' })}>Record manual review</Button></details>}
-        </> : <div className="border-y border-border py-5 text-xs text-muted-foreground">Awaiting a validated settlement instruction.</div>}
+        </> : <div className="border-y border-border py-5 text-xs text-muted-foreground">Create and validate an instruction above before external payment.</div>}
         
       </section>        </>}
       </div>
     </div>
-    <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Payment authorisation and execution remain external; Submitted means a supplied hash, not payment initiation. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
+    <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Payment authorisation and execution remain external; Supplying a hash records only a local verification request; no submission is claimed. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
     {msg && <p role="status" className="border-l-2 border-warning pl-3 text-xs text-warning">{msg}</p>}
   </Shell>;
 }
