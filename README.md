@@ -25,7 +25,6 @@ T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A p
 - Implemented: GPU-forward payoff derivation, state-driven Overview, local audit events, shared netting maths, eligibility/date validation, lifecycle metadata, instruction register, issuer/network validation, read-only Horizon confirmation and field-level reconciliation.
 - Not implemented: external payment authorisation, payment sending, wallet signing, mainnet, live derivative valuation, real FX/market prices, persistence beyond browser localStorage or production-grade multi-operator controls.
 
-## Tests
 ## Phase 2 — wallet and settlement asset
 Connect Freighter on **Stellar Testnet**, open Settlement and enter the beneficiary public address in **Wallet & Settlement Asset**. Use the connected payer address for a new draft if appropriate; existing instructions are never silently rewritten. The panel uses the SDK's `Horizon.Server("https://horizon-testnet.stellar.org").loadAccount()` for actual account data and matches both code **USDC** and exact configured issuer. It rechecks the wallet network/account, refreshes every 30 seconds/on focus, and supports manual refresh. No balances are persisted or fabricated.
 
