@@ -16,6 +16,7 @@ import { Route as NettingRouteImport } from './routes/netting'
 import { Route as ObligationsRouteImport } from './routes/obligations'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as SettlementRouteImport } from './routes/settlement'
+import { Route as UnlockRouteImport } from './routes/unlock'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const SettlementRoute = SettlementRouteImport.update({
   path: '/settlement',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnlockRoute = UnlockRouteImport.update({
+  id: '/unlock',
+  path: '/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/obligations': typeof ObligationsRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
+  '/unlock': typeof UnlockRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/obligations': typeof ObligationsRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
+  '/unlock': typeof UnlockRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/obligations': typeof ObligationsRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
+  '/unlock': typeof UnlockRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/obligations'
     | '/overview'
     | '/settlement'
+    | '/unlock'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/obligations'
     | '/overview'
     | '/settlement'
+    | '/unlock'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/obligations'
     | '/overview'
     | '/settlement'
+    | '/unlock'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   ObligationsRoute: typeof ObligationsRoute
   OverviewRoute: typeof OverviewRoute
   SettlementRoute: typeof SettlementRoute
+  UnlockRoute: typeof UnlockRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettlementRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unlock': {
+      id: '/unlock'
+      path: '/unlock'
+      fullPath: '/unlock'
+      preLoaderRoute: typeof UnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObligationsRoute: ObligationsRoute,
   OverviewRoute: OverviewRoute,
   SettlementRoute: SettlementRoute,
+  UnlockRoute: UnlockRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
