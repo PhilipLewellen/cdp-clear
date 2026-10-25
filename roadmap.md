@@ -1,7 +1,9 @@
 # Guided live-demo UX
-- [ ] Add prominent Demo Workflow with Calculate → Net → Settle → Verify and Next/Back navigation.
-- [ ] Reuse existing payment and retrospective verification without changing financial logic or saved records; collapse advanced details.
-- [ ] Verify guided navigation, saved-evidence persistence, live read-only verification and original pages.
+- [x] Add prominent Demo Workflow with Calculate → Net → Settle → Verify and Next/Back navigation.
+- [x] Reuse existing payment and retrospective verification without changing financial logic or saved records; collapse advanced details.
+- [x] Verify guided navigation, saved-evidence persistence, live read-only verification and original pages.
+
+Guided UX validation: full existing suite passed (106 tests), plus the new saved-record preservation test and affected panels passed. Latest build OK. Browser followed all steps, showed 3100 gross / 1500 net / 51.6% reduction, reconciled a pre-existing public Testnet payment using live Horizon, retained evidence on reload and verified again. All original pages loaded; no Horizon POST, page errors or document overflow at 800/390 pixels. Public test evidence exists only in temporary browser context, not application seed data. No new payment or real Freighter approval was performed; prior real-extension checks remain blocked by unavailable user hardware.
 
 # Phase 4 retrospective reconciliation
 - [x] Add separate persistent TEST-SETTLEMENT-001 with saved Phase 3 evidence or explicit operator entry.
