@@ -1,3 +1,14 @@
+# Scaled end-to-end settlement
+- [x] Add scale selector (1:1 … 1:10,000, default 1:1,000) scaling contract quantities proportionally; recalc via existing netting logic.
+- [x] Generate immutable scaled settlement instruction (ID, snapshot, amounts, parties, USDC asset/issuer, network, timestamp) without any blockchain action.
+- [x] Connect instruction to Freighter: prerequisites, review screen, "Settle with USDC on Stellar", real Testnet payment, duplicate-submission protection.
+- [x] Automatic Horizon reconciliation against the exact instruction, "Verify Again", persisted status and audit trail.
+- [x] Preserve the historical 1 USDC record and all existing pages; label "Scaled Stellar Testnet Demonstration" with 1 USD = 1 USDC assumption.
+- [x] Tests and browser validation.
+- [ ] Verify a real Freighter-approved scaled payment end to end (requires the user's funded Testnet wallet/extension).
+
+Scaled settlement validation: 142 tests pass; build OK. Browser check confirmed the default 1:1,000 scale shows USD 3.10 gross / 1.50 net with the "1,500 ÷ 1,000 = 1.50 → 1.5000000 testnet USDC" calculation, instruction generation, the Settle step with instruction details and blocked payment without Freighter, the Verify step with Verify Again, persistence across reload, and full-size 3,100 / 1,500 / 1500.0000000 figures. No page errors; no Horizon POST; historical 1 USDC panels remain separate. A genuine Freighter approval and live scaled payment were not performed (no user wallet in the sandbox).
+
 # H100 market data integration
 - [x] Add Compute Screener H100 fetch/validation/cache module with no hardcoded or fallback prices.
 - [x] Add H100 Market Reference panel with refresh, scenario run/reset and CC BY 4.0 attribution in Demo Workflow Step 1.

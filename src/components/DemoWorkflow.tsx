@@ -7,6 +7,7 @@ import { TestSettlementPayment } from '@/components/TestSettlementPayment';
 import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
 import { H100MarketPanel } from '@/components/H100MarketPanel';
+import { ScaledSettlementCalc, ScaledSettlementPayment, ScaledSettlementVerify } from '@/components/ScaledSettlement';
 import { useStore } from '@/lib/use-store';
 import { deriveObligation, fmt, netObligations } from '@/lib/netting';
 import { marketScenario } from '@/lib/h100';
@@ -70,11 +71,13 @@ export function DemoWorkflow() {
         <div className="demo-net-flow"><div><p className="text-xs text-muted-foreground">{trades.length} gross cash obligations</p><p className="mt-2 font-mono text-3xl">{fmt(r.gross, r.currency)}</p></div><ArrowRight className="size-6 text-muted-foreground" aria-hidden="true"/><div><p className="text-xs text-muted-foreground">{r.net > 0 ? 'One net obligation' : 'No net obligation'}</p><p className="mt-2 font-mono text-3xl text-primary">{fmt(r.net, r.currency)}</p><p className="mt-2 font-mono">{direction}</p></div></div>
         <div className="mt-6 border-y border-border py-5"><p className="font-mono text-2xl text-success">{r.gross ? (r.reduction / r.gross * 100).toFixed(1) : '0.0'}% reduction</p><p className="mt-2 text-sm text-muted-foreground">{fmt(r.reduction, r.currency)} less in gross payment flows. Illustrative contractual amounts, not a blockchain payment.</p></div>
         <details className="mt-5"><summary>Advanced Details · calculation and eligibility</summary><p className="mt-3 font-mono">{fmt(r.aReceives, r.currency)} payable to CP-A − {fmt(r.bReceives, r.currency)} payable to CP-B</p><p className="mt-3 text-xs text-muted-foreground">Assumes the same counterparties, currency, settlement cycle, eligible obligations and an enforceable netting agreement. No novation or CCP guarantee.</p></details>
+        <ScaledSettlementCalc />
       </>}
       <Button asChild variant="outline" className="mt-5"><Link to="/netting">Full netting analysis</Link></Button>
     </section>
     <section hidden={step !== 2} aria-label="Separate test settlement" className="demo-panel">
-      <p className="mb-5 text-sm">The net obligation is illustrative; the separate 1 USDC payment demonstrates a real transfer of valueless tokens on Stellar Testnet.</p>
+      <ScaledSettlementPayment onSuccess={() => setRefresh(value => value + 1)} />
+      <p className="mb-5 mt-8 border-t border-border pt-5 text-sm">Historical demonstration: the separate 1 USDC payment below is unrelated to the scaled instruction and demonstrates a real transfer of valueless tokens on Stellar Testnet.</p>
       <div className="grid gap-5 sm:grid-cols-2"><div className="border-l-2 border-border pl-4"><p className="text-xs text-muted-foreground">Illustrative derivative obligation</p><p className="mt-2 font-mono text-2xl">{r.ok ? fmt(r.net, r.currency) : 'Netting unavailable'}</p><p className="mt-2 text-xs text-muted-foreground">{r.ok ? direction : r.error} · Not discharged by this test</p></div><div className="border-l-2 border-primary pl-4"><p className="text-xs text-muted-foreground">Separate Stellar Testnet payment</p><p className="mt-2 font-mono text-2xl text-primary">1.0000000 USDC</p><p className={`mt-2 text-sm ${confirmed ? 'text-success' : 'text-warning'}`}>{confirmed ? 'Blockchain confirmation verified' : testSettlement?.hash ? 'Existing transaction available · verify in step 4' : 'No existing transaction associated'}</p></div></div>
       {testSettlement?.hash && <div className="mt-5 border-y border-border py-4"><p className="text-sm">Use the existing transaction — no new payment required.</p><p className="mt-2 break-all font-mono text-xs text-muted-foreground">{testSettlement.hash}</p>{confirmed && <><p className="mt-2 text-xs">Ledger {result?.ledger ?? 'Not recorded'} · Confirmed {result?.confirmedAt}</p><a href={`https://stellar.expert/explorer/testnet/tx/${testSettlement.hash}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-primary underline">Inspect verified transaction ↗</a></>}</div>}
       <details className="mt-5"><summary>Advanced Details · live wallet balances</summary><WalletSettlementAsset amount={1} source={testSettlement?.source ?? ''} beneficiary={testSettlement?.destination ?? ''} issuer={DEFAULT_ISSUER} refreshVersion={refresh}/></details>
@@ -82,7 +85,8 @@ export function DemoWorkflow() {
       <p className="mt-4 text-xs text-muted-foreground">Freighter connection is shared with the header. Existing payment references and reconciliation records are retained.</p>
     </section>
     <section hidden={step !== 3} aria-label="Verify existing payment" className="demo-panel">
-      <p className="mb-5 text-sm">Reconciliation checks the actual blockchain payment against the expected sender, recipient, exact amount and USDC issuer — without sending another payment.</p>
+      <ScaledSettlementVerify />
+      <p className="mb-5 mt-8 border-t border-border pt-5 text-sm">Historical record: reconciliation below checks the separate 1 USDC payment against its expected sender, recipient, exact amount and USDC issuer — without sending another payment.</p>
       <TestSettlementReconciliation guided />
       {result?.status === 'Reconciled' && <p className="mt-5 flex items-start gap-2 text-sm text-success"><CheckCircle2 className="size-4 shrink-0"/>Existing 1 USDC payment matched. The illustrative derivative obligation remains separate.</p>}
       <div className="mt-5 flex flex-wrap gap-3"><Button asChild variant="outline"><Link to="/activity">Full audit log</Link></Button><Button asChild variant="outline"><Link to="/settlement">Advanced settlement operations</Link></Button></div>
