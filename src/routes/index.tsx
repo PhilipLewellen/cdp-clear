@@ -1,15 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card, Shell, Tag, btnCls, btnGhost, inputCls } from "@/components/Shell";
+import { Card, Shell, Tag, Term, inputCls } from "@/components/Shell";
 import { useStore } from "@/lib/store";
-import { fmt, type Party } from "@/lib/netting";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { type Party } from "@/lib/netting";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Trades — CDP Clear" },
-      { name: "description", content: "Editable sample cash obligations between Party A and Party B." },
-      { property: "og:title", content: "Trades — CDP Clear" },
-      { property: "og:description", content: "Editable sample cash obligations between Party A and Party B." },
+      { title: "Trade Capture & Lifecycle — CDP Clear" },
+      { name: "description", content: "Illustrative contractual cash obligations and lifecycle metadata for CP-A and CP-B." },
+      { property: "og:title", content: "Trade Capture & Lifecycle — CDP Clear" },
+      { property: "og:description", content: "Illustrative contractual cash obligations and lifecycle metadata for CP-A and CP-B." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Trades,
@@ -21,16 +25,16 @@ function Trades() {
     setTrades(trades.map((t, j) => (j === i ? { ...t, ...patch } : t)));
 
   return (
-    <Shell title="Trades" intro="Three cash obligations between Party A and Party B. Each row says who receives cash; the other party pays. Edit any value — the Netting page updates automatically.">
+    <Shell title="Bilateral Settlement Obligations" intro="Contractual cash obligations within netting set NS-AB-001 · CP-A / CP-B · Tokenised compute derivatives.">
       <Card>
         <div className="mb-4 flex items-center gap-2">
-          <Tag tone="warning">Simulated values</Tag>
-          <span className="text-xs text-muted-foreground">Sample obligations, not live market data.</span>
+          <Tag tone="warning">Illustrative valuation inputs</Tag>
+          <span className="text-xs text-muted-foreground">Cash obligations, not derivative trade notionals or live market valuations.</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase text-muted-foreground">
-              <tr><th className="py-2">Trade ID</th><th>Payer</th><th>Receiver</th><th>Currency</th><th>Amount</th><th>Plain English</th><th /></tr>
+              <tr><th className="py-2">Trade Reference</th><th>Counterparty Payer</th><th>Counterparty Beneficiary</th><th>Contractual Currency</th><th className="text-right">Gross Obligation</th><th>Settlement Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {trades.map((t, i) => {
@@ -38,17 +42,17 @@ function Trades() {
                 return (
                   <tr key={i} className="border-t border-border">
                     <td className="py-3 font-mono">{t.id}</td>
-                    <td className="font-mono">{payer}</td>
+                    <td className="font-mono">CP-{payer}</td>
                     <td>
-                      <select className={inputCls + " w-20"} value={t.receiver} onChange={(e) => update(i, { receiver: e.target.value as Party })}>
-                        <option value="A">A</option><option value="B">B</option>
+                      <select aria-label={`${t.id} beneficiary`} className={inputCls + " min-w-24"} value={t.receiver} onChange={(e) => update(i, { receiver: e.target.value as Party })}>
+                        <option value="A">CP-A</option><option value="B">CP-B</option>
                       </select>
                     </td>
-                    <td><input className={inputCls + " w-20"} value={t.currency} onChange={(e) => update(i, { currency: e.target.value.toUpperCase() })} /></td>
-                    <td><input type="number" min={0} step="0.01" className={inputCls + " w-32"} value={t.amount} onChange={(e) => update(i, { amount: parseFloat(e.target.value) || 0 })} /></td>
-                    <td className="text-muted-foreground">{payer} pays {t.receiver} {fmt(t.amount, t.currency)}</td>
+                    <td><input aria-label={`${t.id} currency`} className={inputCls + " min-w-24"} value={t.currency} onChange={(e) => update(i, { currency: e.target.value.toUpperCase() })} /></td>
+                    <td><input aria-label={`${t.id} gross obligation`} type="number" min={0} step="0.01" className={inputCls + " w-32 text-right"} value={t.amount} onChange={(e) => update(i, { amount: parseFloat(e.target.value) || 0 })} /></td>
+                    <td><Tag>Uninstructed</Tag></td>
                     <td>
-                      <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => setTrades(trades.filter((_, j) => j !== i))}>Remove</button>
+                      <Button variant="ghost" size="icon" aria-label={`Remove ${t.id}`} title={`Remove ${t.id}`} onClick={() => setTrades(trades.filter((_, j) => j !== i))}><Trash2 /></Button>
                     </td>
                   </tr>
                 );
@@ -57,10 +61,11 @@ function Trades() {
           </table>
         </div>
         <div className="mt-4 flex gap-2">
-          <button className={btnGhost} onClick={() => setTrades([...trades, { id: `T-${String(trades.length + 1).padStart(3, "0")}`, receiver: "A", amount: 0, currency: "USD" }])}>Add obligation</button>
-          <Link to="/netting" className={btnCls}>Next: Netting →</Link>
+          <Button variant="outline" onClick={() => setTrades([...trades, { id: `T-${String(Math.max(0, ...trades.map(t => Number(t.id.replace("T-", "")) || 0)) + 1).padStart(3, "0")}`, receiver: "A", amount: 0, currency: "USD", settlementDate: trades[0]?.settlementDate ?? "2026-10-26", lifecycle: "Captured", eligible: true }])}><Plus />Add obligation</Button>
+          <Button asChild><Link to="/netting">Determine NSO<ArrowRight /></Link></Button>
         </div>
       </Card>
+      <section><h2 className="mb-3 text-sm font-semibold">Trade lifecycle metadata</h2><div className="overflow-x-auto"><table className="w-full text-sm"><thead className="text-left text-xs text-muted-foreground"><tr><th>Trade Reference</th><th>Lifecycle</th><th>Settlement Date</th><th><Term label="Netting eligibility" meaning="Only eligible obligations with matching settlement dates and currencies can form this bilateral netting set." /></th></tr></thead><tbody>{trades.map((t, i) => <tr key={t.id} className="border-t border-border"><td className="py-2 font-mono">{t.id}</td><td>{t.lifecycle ?? "Validated"}</td><td><input aria-label={`${t.id} settlement date`} type="date" className={inputCls + " max-w-44"} value={t.settlementDate ?? "2026-10-26"} onChange={e => update(i, { settlementDate: e.target.value })} /></td><td><label className="flex items-center gap-2"><input type="checkbox" checked={t.eligible !== false} onChange={e => update(i, { eligible: e.target.checked })} />Eligible</label></td></tr>)}</tbody></table></div></section>
     </Shell>
   );
 }
