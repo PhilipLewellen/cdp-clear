@@ -32,18 +32,20 @@ function statusTone(status: ScaledInstruction['status']) {
 }
 
 /** Step 2 — Settlement Scale selector, scaled calculation and instruction generation. */
-export function ScaledSettlementCalc() {
+export function ScaledSettlementCalc({ requireConfirmation = false }: { requireConfirmation?: boolean }) {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const [scale, setScale] = useState<SettlementScale>(DEFAULT_SCALE);
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
   const generationGuard = useRef(false);
+  const [confirmedCalculation, setConfirmedCalculation] = useState<string | null>(null);
+  const calculationKey = JSON.stringify({ trades, divisor: scale.divisor });
   const originalOk = scaledNet(trades, 1);
   const scaled = scaledNet(trades, scale.divisor);
   const ready = originalOk.ok && scaled.ok && scaled.net > 0 && scaled.payer === originalOk.payer;
   const direction = scaled.payer ? `CP-${scaled.payer} pays CP-${scaled.payee}` : 'Fully offset · no payment needed';
   const generate = async () => {
-    if (generationGuard.current) return;
+    if (generationGuard.current || (requireConfirmation && confirmedCalculation !== calculationKey)) return;
     generationGuard.current = true;
     setGenerating(true);
     setError('');
@@ -67,9 +69,13 @@ export function ScaledSettlementCalc() {
       </dl>
       <p className="mt-3 text-xs text-muted-foreground">The {scaled.net > 0 ? usdcAmount(scaled.net) : '0'} USDC payment represents the scaled portfolio only; the original {originalOk.ok ? fmt(originalOk.net, originalOk.currency) : ''} obligation is not settled by this transfer. Testnet USDC has no real monetary value.</p>
       {scaled.net <= 0 && <p className="mt-3 text-xs text-warning">Net obligation is zero at this scale; no payment is required.</p>}
+      {requireConfirmation && !(scaledInstruction && snapshotUnchanged(scaledInstruction, trades)) && <div className="mt-4 border-t border-border pt-3">
+        <p className="text-xs text-muted-foreground">Selected calculation: booked illustrative contract fixings · {scale.ratio} scale · {scaled.net > 0 ? usdcAmount(scaled.net) : '0.0000000'} testnet USDC · {direction}. Published H100 prices are not used for this instruction.</p>
+        <Button variant="outline" className="mt-3" disabled={!ready || generating || confirmedCalculation === calculationKey} onClick={() => setConfirmedCalculation(calculationKey)}>{confirmedCalculation === calculationKey ? 'Illustrative calculation confirmed' : 'Confirm Illustrative Settlement Calculation'}</Button>
+      </div>}
       {scaledInstruction && snapshotUnchanged(scaledInstruction, trades)
         ? <p className="mt-4 text-xs">Instruction <span className="font-mono">{scaledInstruction.id}</span> already exists · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span> — changing the scale never overwrites an existing instruction. Continue to Settle.</p>
-        : <Button className="mt-4" disabled={!ready || generating} onClick={generate}>{generating ? 'Saving financial snapshot…' : scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
+        : <Button className="mt-4" disabled={!ready || generating || (requireConfirmation && confirmedCalculation !== calculationKey)} onClick={generate}>{generating ? 'Saving financial snapshot…' : scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
       {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
       {scaledInstruction && !snapshotUnchanged(scaledInstruction, trades) && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span><span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span></p>}
     </>}
