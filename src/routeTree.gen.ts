@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as NettingRouteImport } from './routes/netting'
+import { Route as SettlementRouteImport } from './routes/settlement'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NettingRoute = NettingRouteImport.update({
+  id: '/netting',
+  path: '/netting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettlementRoute = SettlementRouteImport.update({
+  id: '/settlement',
+  path: '/settlement',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/netting': typeof NettingRoute
+  '/settlement': typeof SettlementRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/netting': typeof NettingRoute
+  '/settlement': typeof SettlementRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/netting': typeof NettingRoute
+  '/settlement': typeof SettlementRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/netting' | '/settlement'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/netting' | '/settlement'
+  id: '__root__' | '/' | '/netting' | '/settlement'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  NettingRoute: typeof NettingRoute
+  SettlementRoute: typeof SettlementRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/netting': {
+      id: '/netting'
+      path: '/netting'
+      fullPath: '/netting'
+      preLoaderRoute: typeof NettingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settlement': {
+      id: '/settlement'
+      path: '/settlement'
+      fullPath: '/settlement'
+      preLoaderRoute: typeof SettlementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  NettingRoute: NettingRoute,
+  SettlementRoute: SettlementRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
