@@ -1,7 +1,11 @@
 # Verifiable settlement evidence
-- [ ] Capture versioned financial snapshots and browser SHA-256 fingerprints for new instructions only.
-- [ ] Reuse read-only Horizon verification to retain genuine operation details and checks; add Step 4 evidence review and JSON export.
-- [ ] Test deterministic hashes, integrity warnings, historical honesty, persistence, read-only verification and export.
+- [x] Capture versioned financial snapshots and browser SHA-256 fingerprints for new instructions only.
+- [x] Reuse read-only Horizon verification to retain genuine operation details and checks; add Step 4 evidence review and JSON export.
+- [x] Test deterministic hashes, integrity warnings, historical honesty, persistence, read-only verification and export.
+
+Evidence validation: 189 tests pass (full 188-test suite plus new provider persistence test verified separately); latest build OK. Browser generated a new instruction, exported JSON and independently recomputed SHA-256, reloaded unchanged provenance, and detected a modified saved net. A pre-existing public 30 USDC Testnet payment verified through live Horizon in a temporary browser fixture; operation ID, confirmation and latest verification times exported correctly. Reverification retained reconciliation timestamp and hash; blocked Horizon produced Unverified with no stale matched-payment evidence. Desktop and 390px checks showed no overflow or runtime errors. No signing, payment submission, data reset or application seed change occurred.
+
+Implementation: financial-snapshot.ts defines versioned lexically key-sorted UTF-8 JSON and Web Crypto SHA-256; scaled-settlement.ts captures provenance on new instruction generation; stellar.ts retains successful transaction-member payment operations and exact seven-decimal checks; settlement-evidence.ts exports allowlisted JSON and refreshes evidence without changing lifecycle; SettlementEvidence.tsx supplies Step 4 integrity, refresh, copy and export. Existing historic snapshots/fingerprints are never invented. Wallet addresses unavailable at generation remain null in the original snapshot; current addresses export separately. Browser storage is editable and local, not independent legal proof, an on-chain commitment, an institution-wide audit or tamper-proof storage. Genuine Freighter signing remains the previously documented manual check, not needed for read-only evidence. Official Stellar skills overview, documentation index and Horizon transaction/operation documentation were consulted; no skills installed or run.
 
 # Final homepage & settlement UX
 - [x] Homepage headline "From derivatives exposure to verified settlement." with supporting description above the four-step workflow.

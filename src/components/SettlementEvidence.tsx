@@ -46,6 +46,7 @@ export function SettlementEvidence() {
     <dl className="mt-3 grid grid-cols-[minmax(100px,150px)_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Instruction</dt><dd className="font-mono">{instruction.id}</dd>
       <dt className="text-muted-foreground">Financial snapshot</dt><dd>{instruction.financialSnapshot ? 'Original snapshot saved' : 'Historical snapshot unavailable'}</dd>
+      <dt className="text-muted-foreground">SHA-256 fingerprint</dt><dd className="break-all font-mono">{instruction.financialFingerprint ? `${instruction.financialFingerprint.slice(0, 12)}…${instruction.financialFingerprint.slice(-12)}` : 'Unavailable'}</dd>
       <dt className="text-muted-foreground">Snapshot integrity</dt><dd role={integrity.startsWith('Warning') ? 'alert' : undefined} className={integrity.startsWith('Warning') ? 'text-destructive' : 'text-muted-foreground'}>{integrity}</dd>
       <dt className="text-muted-foreground">Stellar payment</dt><dd className={verification?.ok ? 'text-success' : 'text-warning'}>{verification?.ok && verification.payment ? 'Verified — matching payment operation' : verification ? (verification.confirmed ? 'Confirmed transaction — payment mismatch' : 'Unverified') : 'Evidence not yet retrieved — verify again'}</dd>
       <dt className="text-muted-foreground">Matched transaction</dt><dd className="break-all font-mono">{verification?.payment?.transactionHash ?? 'Unavailable'}</dd>
