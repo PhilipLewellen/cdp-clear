@@ -2,7 +2,9 @@
 - [x] Add Compute Screener H100 fetch/validation/cache module with no hardcoded or fallback prices.
 - [x] Add H100 Market Reference panel with refresh, scenario run/reset and CC BY 4.0 attribution in Demo Workflow Step 1.
 - [x] Add Original Demo / Market Data Scenario switch, indicative-scenario label and net comparison; keep scenario state separate from booked records.
-- [ ] Run tests and browser check of refresh, scenario recalculation, reset and error states.
+- [x] Run tests and browser check of refresh, scenario recalculation, reset and error states.
+
+H100 validation: 126 tests pass; build OK. Live browser check fetched the genuine Compute Screener observation (3.7129 USD/GPU-hour, Provisional, H100 SXM 80GB, 2026-10-25), ran the scenario (net USD 811.93 CP-B to CP-A vs original USD 1,500, difference 688.07 lower), reset to the original demo with 3,100 gross / 1,500 net / 51.6% intact, showed a visible error with no fallback price when the API was blocked, and labeled the stored observation Cached after reload. Scenario state is component-local; no settlement, wallet or reconciliation records were touched.
 
 # Guided live-demo UX
 - [x] Add prominent Demo Workflow with Calculate → Net → Settle → Verify and Next/Back navigation.
