@@ -24,7 +24,7 @@ describe('presentation-only guided navigation', () => {
     render(<StoreProvider><DemoWorkflow /></StoreProvider>);
     await waitFor(() => expect(screen.getByLabelText('Existing payment transaction hash')).toHaveValue(record.hash));
     const saved = localStorage.getItem('cdp-clear-v1');
-    fireEvent.click(screen.getByRole('button', { name: 'Next: Net' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review Netting' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: Settle' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: Verify' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlaskConical, RefreshCw, Send } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FlaskConical, RefreshCw, Send } from 'lucide-react';
 import { SettlementException } from '@/components/SettlementException';
 import { Button } from '@/components/ui/button';
 import { useFreighter } from '@/hooks/use-freighter';
@@ -43,7 +43,7 @@ export function ScaledSettlementCalc() {
   };
   return <section className="settlement-section mt-6" aria-label="Scaled Stellar Testnet Demonstration">
     <div className="module-heading"><h2>Scaled Stellar Testnet Demonstration</h2><span>1 USD = 1 USDC · illustrative</span></div>
-    <p className="mb-4 text-xs text-muted-foreground">Scales all three contract quantities proportionally; agreed strikes and fixings stay unchanged. Fractional GPU-hours are acceptable for this illustrative portfolio. This is not a contractual settlement mechanism.</p>
+    <p className="mb-4 text-xs text-muted-foreground">For the Testnet demo, we use a smaller illustrative portfolio so we can execute and verify a real blockchain payment with a small amount of test USDC. Scaling reduces all three contract quantities proportionally; agreed forward prices and fixings stay unchanged. This is not a contractual settlement mechanism.</p>
     <div className="mb-5 flex flex-wrap gap-2" role="radiogroup" aria-label="Settlement Scale">
       {SETTLEMENT_SCALES.map(option => <Button key={option.key} variant={option.divisor === scale.divisor ? 'default' : 'ghost'} role="radio" aria-checked={option.divisor === scale.divisor} onClick={() => setScale(option)}>{option.label} <span className="font-mono">{option.ratio}</span></Button>)}
     </div>
@@ -52,7 +52,7 @@ export function ScaledSettlementCalc() {
       <p className="mt-4 border-y border-border py-3 font-mono text-sm">{originalOk.ok ? fmt(originalOk.net, originalOk.currency) : '—'} ÷ {scale.divisor.toLocaleString('en-US')} = {fmt(scaled.net, scaled.currency)} → {scaled.net > 0 ? usdcAmount(scaled.net) : '0.0000000'} testnet USDC</p>
       <p className="mt-3 text-xs text-muted-foreground">The {scaled.net > 0 ? usdcAmount(scaled.net) : '0'} USDC payment represents the scaled portfolio only; the original {originalOk.ok ? fmt(originalOk.net, originalOk.currency) : ''} obligation is not settled by this transfer. Testnet USDC has no real monetary value.</p>
       {scaled.net <= 0 && <p className="mt-3 text-xs text-warning">Net obligation is zero at this scale; no payment is required.</p>}
-      <Button className="mt-4" disabled={!ready} onClick={generate}>Generate Scaled Settlement Instruction</Button>
+      <Button className="mt-4" disabled={!ready} onClick={generate}>Generate Settlement Instruction</Button>
       {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
       {scaledInstruction && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span>{!snapshotUnchanged(scaledInstruction, trades) && <span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span>}</p>}
     </>}
@@ -60,7 +60,7 @@ export function ScaledSettlementCalc() {
 }
 
 /** Step 3 — instruction details, Freighter review and the real scaled USDC payment. */
-export function ScaledSettlementPayment({ onSuccess }: { onSuccess: () => void }) {
+export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSuccess: () => void; onViewVerified?: () => void }) {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const wallet = useFreighter();
   const [recipient, setRecipient] = useState('');
@@ -157,18 +157,20 @@ export function ScaledSettlementPayment({ onSuccess }: { onSuccess: () => void }
     {!unchanged && <p role="alert" className="mt-4 text-xs text-warning">The portfolio changed after this instruction was generated. Payment is blocked; generate a new instruction in step 2.</p>}
     {instruction.status === 'Instruction Created' && unchanged && !pending && <>
       <label className="mt-4 block text-xs text-muted-foreground">Recipient public address (CP-{instruction.beneficiary} wallet)<input aria-label="Scaled settlement recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
-      <Button className="mt-3" disabled={busy || wallet.status !== 'connected' || !recipient} onClick={review}><Send className="size-3.5" />Settle with USDC on Stellar</Button>
-      {wallet.status !== 'connected' && <p className="mt-2 text-xs text-muted-foreground">Connect Freighter on Testnet in the header. The connected account pays as CP-{instruction.payer}.</p>}
+      {wallet.status === 'connected'
+        ? <Button className="mt-3" disabled={busy || !recipient} onClick={review}><Send className="size-3.5" />Review Payment</Button>
+        : <Button className="mt-3" disabled={busy || wallet.status === 'loading'} onClick={wallet.connect}>Connect Wallet</Button>}
+      {wallet.status !== 'connected' && <p className="mt-2 text-xs text-muted-foreground">{wallet.error ?? 'Connect Freighter on Stellar Testnet.'} The connected account pays as CP-{instruction.payer}.</p>}
     </>}
     {prepared && !pending && !paid && <div role="group" aria-label="Confirm scaled payment" className="mt-4 border-y border-border py-4">
       <h3 className="mb-3 text-sm font-medium">Confirm Testnet payment</h3>
       <dl className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt>Sender</dt><dd className="break-all font-mono">{prepared.source}</dd><dt>Recipient</dt><dd className="break-all font-mono">{prepared.destination}</dd><dt>Asset / amount</dt><dd className="font-mono">{prepared.amount} USDC</dd><dt>Network</dt><dd>Stellar Testnet</dd><dt>Network fee</dt><dd className="font-mono">{prepared.feeXlm} XLM</dd></dl>
-      <div className="mt-3 flex flex-wrap gap-2"><Button disabled={busy || wallet.status !== 'connected'} onClick={send}>Confirm & sign in Freighter</Button><Button variant="outline" disabled={busy} onClick={() => setPrepared(null)}>Cancel</Button></div>
+      <div className="mt-3 flex flex-wrap gap-2"><Button disabled={busy || wallet.status !== 'connected'} onClick={send}>Approve in Freighter</Button><Button variant="outline" disabled={busy} onClick={() => setPrepared(null)}>Cancel</Button></div>
     </div>}
     {busy && <p role="status" className="mt-3 text-xs text-primary">{phase}</p>}
     {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
     {pending && !paid && <div className="mt-3 text-xs"><p>Submission outcome unresolved. Another payment is blocked, including after reload in this tab.</p><Button variant="outline" className="mt-2" disabled={busy || testPaymentSession.locked} onClick={check}><RefreshCw className="size-3.5" />Check payment status</Button></div>}
-    {paid && <div role="status" className="mt-4 text-xs text-success"><p>Payment {instruction.status === 'Reconciled' ? 'reconciled' : 'submitted'} · transaction recorded on Stellar Testnet{instruction.ledger ? ` · Ledger ${instruction.ledger}` : ''}.</p><p className="mt-2 break-all font-mono">{instruction.txHash}</p><a className="mt-2 inline-block text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect transaction on Stellar Expert ↗</a></div>}
+    {paid && <div role="status" className="mt-4 text-xs text-success"><p>Payment {instruction.status === 'Reconciled' ? 'reconciled' : 'submitted'} · transaction recorded on Stellar Testnet{instruction.ledger ? ` · Ledger ${instruction.ledger}` : ''}.</p><p className="mt-2 break-all font-mono">{instruction.txHash}</p><a className="mt-2 inline-block text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect transaction on Stellar Expert ↗</a>{onViewVerified && <div><Button className="mt-3" onClick={onViewVerified}>View Confirmed Payment<ArrowRight className="size-3.5" /></Button></div>}</div>}
     <p className="mt-3 text-[10px] text-muted-foreground">Freighter signs locally. Never enter a seed phrase or private key. Payment is never initiated by changing the scale, generating an instruction or refreshing market prices.</p>
   </section>;
 }
@@ -199,6 +201,16 @@ export function ScaledSettlementVerify() {
   const canVerify = Boolean(instruction.txHash && instruction.payerAddress && instruction.recipient);
   return <section className="settlement-section" aria-label="Scaled settlement verification">
     <div className="module-heading"><h2>Scaled settlement verification</h2><span>{instruction.id}</span></div>
+    {instruction.status === 'Reconciled' && <div className="mb-5 rounded border border-border bg-card p-4" role="status" aria-label="Settlement Reconciled">
+      <p className="flex items-center gap-2 text-lg font-semibold text-success"><CheckCircle2 className="size-5 shrink-0" />Settlement Reconciled</p>
+      <dl className="mt-4 grid grid-cols-[180px_minmax(0,1fr)] gap-2 text-xs">
+        <dt className="text-muted-foreground">Expected vs actual amount</dt><dd className="font-mono">{instruction.usdcAmount} USDC · {instruction.usdcAmount} USDC · <span className="text-success">Match</span></dd>
+        <dt className="text-muted-foreground">Sender / recipient</dt><dd className="break-all font-mono">{instruction.payerAddress} → {instruction.recipient} · <span className="text-success">Match</span></dd>
+        <dt className="text-muted-foreground">Asset / issuer</dt><dd className="break-all font-mono">{instruction.assetCode} · {instruction.assetIssuer} · <span className="text-success">Match</span></dd>
+        {instruction.confirmedAt && <><dt className="text-muted-foreground">Confirmed on Stellar</dt><dd className="font-mono">{instruction.confirmedAt}{instruction.ledger ? ` · Ledger ${instruction.ledger}` : ''}</dd></>}
+      </dl>
+      <p className="mt-3 text-xs text-muted-foreground">The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>
+    </div>}
     <p className="mb-4 text-sm">Independent Horizon verification compares the confirmed blockchain payment against instruction {instruction.id}: network, success, sender, recipient, exact {instruction.usdcAmount} USDC amount, asset code and Circle Testnet issuer.</p>
     <dl className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Status</dt><dd className={statusTone(instruction.status)}>{instruction.status}</dd>
@@ -213,7 +225,6 @@ export function ScaledSettlementVerify() {
       {phase && <p role="status" className="text-xs text-primary">{phase}</p>}
     </div>
     {!canVerify && <p className="mt-3 text-xs text-muted-foreground">Verification becomes available after a payment transaction hash, payer wallet and recipient are recorded for this instruction.</p>}
-    {instruction.status === 'Reconciled' && <p className="mt-4 text-sm text-success">Scaled settlement reconciled against instruction {instruction.id}. The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>}
     <div className="mt-6 border-t border-border pt-4">
       <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
       <p className="mt-2 text-xs text-muted-foreground">Isolated demonstration: reconcile a real confirmed Testnet payment against a deliberately incorrect hypothetical instruction. No records change and no payment is made.</p>
