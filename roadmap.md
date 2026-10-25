@@ -1,3 +1,9 @@
+# Phase 2 wallet balances and asset validation
+- [ ] Share the live Freighter connection across the header and Settlement.
+- [ ] Query exact-issuer Testnet balances, reserves, liabilities and beneficiary authorisation.
+- [ ] Add compact settlement funding checks and test missing prerequisites; keep execution disabled.
+- [ ] Verify live public-account reads and browser states; real extension check requires the user's browser.
+
 # Phase 1 wallet connection
 - [x] Freighter connect/disconnect in header, Testnet-only guard, no persistence.
 - [ ] Real Freighter connection check on published site (needs the user's browser extension).
