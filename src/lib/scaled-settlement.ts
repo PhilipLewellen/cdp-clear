@@ -81,6 +81,7 @@ export function generateScaledInstruction(trades: Obligation[], scale: Settlemen
     network: 'Stellar Testnet',
     snapshot: JSON.stringify(scaleTrades(trades, scale.divisor)),
     recipient: '',
+    payerAddress: '',
     status: 'Instruction Created',
     txHash: '',
   };
@@ -104,14 +105,9 @@ export function reconcileScaled(instruction: ScaledInstruction, result: VerifyRe
 
 export async function verifyScaledInstruction(instruction: ScaledInstruction, trades: Obligation[], allocatedHashes: string[]): Promise<ScaledInstruction> {
   try {
-    const result = await verifyTestnetPayment({ hash: instruction.txHash, source: instruction.snapshot ? payerAddress(instruction) : '', destination: instruction.recipient, amount: Number(instruction.usdcAmount), assetCode: instruction.assetCode, assetIssuer: instruction.assetIssuer });
+    const result = await verifyTestnetPayment({ hash: instruction.txHash, source: instruction.payerAddress, destination: instruction.recipient, amount: Number(instruction.usdcAmount), assetCode: instruction.assetCode, assetIssuer: instruction.assetIssuer });
     return reconcileScaled(instruction, result, trades, allocatedHashes);
   } catch (error) {
     return { ...instruction, status: 'Verification unavailable', verifiedNote: error instanceof Error ? error.message : 'Horizon verification unavailable.' };
   }
-}
-
-/** Payer wallet is recorded on the instruction at payment time, never assumed. */
-export function payerAddress(instruction: ScaledInstruction): string {
-  return (instruction as ScaledInstruction & { payerAddress?: string }).payerAddress ?? '';
 }
