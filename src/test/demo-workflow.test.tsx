@@ -20,10 +20,10 @@ describe('presentation-only guided navigation', () => {
     const references = JSON.stringify({ source: record.source, destination: record.destination, hash: record.hash });
     localStorage.setItem('cdp-clear-test-payment-confirmed', references);
     render(<StoreProvider><DemoWorkflow /></StoreProvider>);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Review Netting' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Continue to Netting' })).toBeTruthy());
     const saved = localStorage.getItem('cdp-clear-v1');
-    fireEvent.click(screen.getByRole('button', { name: 'Review Netting' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next: Settle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Netting' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Settlement' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: Verify' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(localStorage.getItem('cdp-clear-v1')).toBe(saved));

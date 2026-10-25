@@ -1,3 +1,8 @@
+# Final workflow consolidation
+- [ ] Keep full market details in Calculate and only the shared valuation basis in Net.
+- [ ] Move confirmed scaling/instruction creation to Settle; preserve records and mounted payment review.
+- [ ] Verify the four-step flow, shared price retrieval, eligibility and locked instruction safeguards.
+
 # Market-driven valuation UX
 - [x] Automatically load full-precision H100 market valuation across Calculate and Net with truthful feed states.
 - [x] Collapse original example, remove scenario controls and duplicate comparisons, confirm booked settlement calculation explicitly.
