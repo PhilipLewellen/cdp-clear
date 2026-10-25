@@ -4,6 +4,7 @@ import { Shell, Tag, Term } from '@/components/Shell';
 import { ManualSettlement } from '@/components/ManualSettlement';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
 import { TestSettlementPayment } from '@/components/TestSettlementPayment';
+import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
 import { inputCls } from '@/lib/ui-classes';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2, FilePlus2, Search, ShieldCheck, Trash2 } from 'lucide-react';
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/settlement')({
 });
 
 function Settlement() {
-  const { trades, instruction, history, setInstruction, recordActivity } = useStore();
+  const { trades, instruction, history, setInstruction, recordActivity, testSettlement } = useStore();
   const r = netObligations(trades);
   const [form, setForm] = useState({ assetIssuer: DEFAULT_ISSUER, source: '', destination: '' });
   const [hash, setHash] = useState('');
@@ -67,7 +68,7 @@ function Settlement() {
   const verify = async () => {
     if (!instruction || busy || instruction.status === 'Reconciled' || !unchanged || !instruction.issuerVerifiedAt || !/^[0-9a-fA-F]{64}$/.test(hash.trim())) return;
     const txHash = hash.trim().toLowerCase();
-    if (history.some(row => row.txHash === txHash && row.id !== instruction.id)) {
+    if (testSettlement?.allocatedHashes?.includes(txHash) || (testSettlement?.result?.status === 'Reconciled' && testSettlement.hash === txHash) || history.some(row => row.txHash === txHash && row.id !== instruction.id)) {
       setInstruction({ ...instruction, status: 'Exception', verifiedNote: 'Transaction already allocated to a reconciled instruction.' });
       setMsg('Duplicate settlement rejected. Use a new payment transaction.'); return;
     }
@@ -128,6 +129,7 @@ function Settlement() {
       </section>
       </div>
       <div className="settlement-side">
+        <TestSettlementReconciliation />
         <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
         <WalletSettlementAsset refreshVersion={balanceRefresh} amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
         {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
