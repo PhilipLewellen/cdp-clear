@@ -44,7 +44,7 @@ export function H100MarketPanel({ onScenario, scenarioActive }: {
     </div>
     {error && <p role="alert" className="mt-3 text-sm text-destructive">Market data unavailable: {error} No fallback price is used.</p>}
     {!observation && !error && <p className="mt-3 text-sm text-muted-foreground">No H100 observation loaded. Refresh market data to retrieve the latest published index value.</p>}
-    {observation && <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+    {observation && <dl className="mt-4 grid grid-cols-[130px_minmax(0,1fr)] gap-x-6 gap-y-2 text-xs sm:grid-cols-[130px_minmax(0,1fr)_130px_minmax(0,1fr)]">
       <dt className="text-muted-foreground">H100 index value</dt><dd className="font-mono text-sm text-primary">{observation.value.toFixed(4)} USD / GPU-hour</dd>
       <dt className="text-muted-foreground">Status</dt><dd>{observation.final ? 'Final' : 'Provisional'}{cached ? ' · Cached' : ''}{stale ? ' · Older than 24 hours' : ''}</dd>
       <dt className="text-muted-foreground">Benchmark</dt><dd>{observation.benchmark ?? 'Not published'}</dd>
