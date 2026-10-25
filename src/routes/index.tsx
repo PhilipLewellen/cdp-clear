@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Shell, Tag, Term, inputCls } from "@/components/Shell";
-import { useStore } from "@/lib/store";
+import { Shell, Tag, Term } from "@/components/Shell";
+import { inputCls } from "@/lib/ui-classes";
+import { useStore } from "@/lib/use-store";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { fmt, netObligations, type Party } from "@/lib/netting";

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shell, Term } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/lib/use-store";
 import { fmt, netObligations } from "@/lib/netting";
 
 export const Route = createFileRoute("/netting")({
