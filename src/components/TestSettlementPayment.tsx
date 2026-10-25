@@ -8,7 +8,7 @@ import { testPaymentSession, type PendingTestPayment } from '@/lib/test-payment-
 import { savePayment } from '@/lib/payment-evidence';
 import { prepareTestPayment, submitTestPayment, readTestPayment, paymentError, TEST_PAYMENT_AMOUNT, type PreparedTestPayment, type ConfirmedTestPayment } from '@/lib/test-payment';
 
-export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) {
+export function TestSettlementPayment({ onSuccess, guided = false }: { onSuccess: () => void; guided?: boolean }) {
   const wallet = useFreighter();
   const [recipient, setRecipient] = useState('');
   const [prepared, setPrepared] = useState<PreparedTestPayment | null>(null);
@@ -82,7 +82,7 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
   return <section className="settlement-section" aria-label="Separate Testnet payment">
     <div className="module-heading"><h2>Separate 1 USDC test settlement</h2><span>Phase 3 · Stellar Testnet</span></div>
     <p className="mb-4 text-xs text-warning">{TEST_PAYMENT_AMOUNT} USDC test tokens only. This does not pay the simulated net obligation or reconcile any instruction.</p>
-    <dl className="mb-4 grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt className="text-muted-foreground">Sender</dt><dd className="break-all font-mono">{wallet.status === 'connected' ? wallet.address : 'Connect Freighter on Testnet'}</dd><dt className="text-muted-foreground">Asset issuer</dt><dd className="break-all font-mono">{USDC_ASSET.issuer}</dd></dl>
+    <details open={!guided} className="mb-4"><summary>{guided ? 'Advanced Details · sender and asset issuer' : 'Sender and asset issuer'}</summary><dl className="mt-3 grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt className="text-muted-foreground">Sender</dt><dd className="break-all font-mono">{wallet.status === 'connected' ? wallet.address : 'Connect Freighter on Testnet'}</dd><dt className="text-muted-foreground">Asset issuer</dt><dd className="break-all font-mono">{USDC_ASSET.issuer}</dd></dl></details>
     <label className="block text-xs text-muted-foreground">Test payment recipient public address<input aria-label="Test payment recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy || Boolean(pending) || Boolean(confirmed)} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
     {!pending && !confirmed && <Button className="mt-3" disabled={busy || wallet.status !== 'connected' || !recipient || testPaymentSession.locked} onClick={review}><Send className="size-3.5" />Send Test Settlement</Button>}
     {prepared && !pending && !confirmed && <div role="group" aria-label="Confirm test payment" className="mt-4 border-y border-border py-4">
