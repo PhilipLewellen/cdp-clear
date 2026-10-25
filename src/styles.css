@@ -99,5 +99,10 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
   }
+  th { font-weight: 500; }
+  td, th { padding-left: 0.5rem; padding-right: 0.5rem; }
+  input, select { min-width: 0; }
 }
