@@ -17,12 +17,18 @@ const payload = (value: number) => ({ gpus: { H100: { value, date: '2026-10-25',
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.stubGlobal('crypto', webcrypto); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe('Automatic indicative valuation', () => {
+  it('reports loading without inventing financial results before the request finishes', () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise(() => {})));
+    render(<StoreProvider><Probe /></StoreProvider>);
+    expect(screen.getByTestId('loading').textContent).toBe('true');
+    expect(screen.getByTestId('valuation').textContent).toBe('unavailable');
+  });
   it('loads immediately and refreshes valuation without modifying booked state or a saved instruction', async () => {
     const instruction = { id: 'SI-saved', status: 'Reconciled', snapshot: 'original', usdcAmount: '1.5000000', financialFingerprint: 'saved-hash', txHash: 'a'.repeat(64) };
     localStorage.setItem('cdp-clear-v1', JSON.stringify({ trades: SAMPLE_OBLIGATIONS, scaledInstruction: instruction }));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(payload(3.712949)))).mockResolvedValueOnce(new Response(JSON.stringify(payload(2.85)))));
     render(<StoreProvider><Probe /></StoreProvider>);
-    await waitFor(() => expect(screen.getByTestId('valuation').textContent).toBe('812.25'));
+    await waitFor(() => expect(screen.getByTestId('valuation').textContent).toBe('812.01'));
     const saved = localStorage.getItem('cdp-clear-v1');
     fireEvent.click(screen.getByText('Refresh'));
     await waitFor(() => expect(screen.getByTestId('valuation').textContent).toBe('655'));

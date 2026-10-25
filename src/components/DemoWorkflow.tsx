@@ -72,7 +72,6 @@ export function DemoWorkflow() {
           <div className="grid gap-3 text-xs">
             <div><p className="flex justify-between gap-3"><span>CP-B → CP-A</span><span className="font-mono">{fmt(r.aReceives, r.currency)}</span></p><progress className="cash-bar gross mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.aReceives} aria-label="Payable to CP-A" /></div>
             <div><p className="flex justify-between gap-3"><span>CP-A → CP-B</span><span className="font-mono">{fmt(r.bReceives, r.currency)}</span></p><progress className="cash-bar gross mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.bReceives} aria-label="Payable to CP-B" /></div>
-            <div className="border-t border-border pt-3"><p className="flex justify-between gap-3 font-semibold"><span>Net · {direction}</span><span className="font-mono text-primary">{fmt(r.net, r.currency)}</span></p><progress className="cash-bar mt-1" max={Math.max(r.aReceives, r.bReceives, 1)} value={r.net} aria-label="Net obligation" /></div>
           </div>
         </figure>
         <div className="mt-6 border-y border-border py-5"><p className="font-mono text-2xl text-success">{r.gross ? (r.reduction / r.gross * 100).toFixed(1) : '0.0'}% reduction</p><p className="mt-2 text-sm text-muted-foreground">{fmt(r.reduction, r.currency)} less in gross payment flows. Indicative market exposures, not authorised settlement amounts or a blockchain payment.</p></div>

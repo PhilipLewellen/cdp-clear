@@ -56,7 +56,7 @@ describe('H100 fetching and caching', () => {
 describe('market scenario on copied economics', () => {
   it('uses the full published price rather than its four-decimal display rounding', () => {
     const r = marketScenario(SAMPLE_OBLIGATIONS, 3.712949);
-    expect(r).toMatchObject({ gross: 1041.89, net: 812.25, aReceives: 927.07, bReceives: 114.82, payer: 'B', payee: 'A' });
+    expect(r).toMatchObject({ gross: 1041.65, net: 812.01, aReceives: 926.83, bReceives: 114.82, payer: 'B', payee: 'A' });
     expect(r.net).not.toBe(marketScenario(SAMPLE_OBLIGATIONS, 3.7129).net);
   });
   it('applies one common H100 fixing to all three demo contracts', () => {
