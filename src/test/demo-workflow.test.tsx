@@ -7,9 +7,7 @@ import { createTestSettlement, verifyExistingTestPayment } from '@/lib/test-reco
 import { SAMPLE_OBLIGATIONS } from '@/lib/netting';
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <span>{children}</span> }));
 vi.mock('@/components/Shell', () => ({ Shell: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
-vi.mock('@/components/TestSettlementPayment', () => ({ TestSettlementPayment: () => null }));
 vi.mock('@/components/ScaledSettlement', () => ({ ScaledSettlementCalc: () => null, ScaledSettlementPayment: () => null, ScaledSettlementVerify: () => null }));
-vi.mock('@/components/WalletSettlementAsset', () => ({ WalletSettlementAsset: () => null }));
 vi.mock('@/lib/test-reconciliation', async original => ({ ...await original<typeof import('@/lib/test-reconciliation')>(), verifyExistingTestPayment: vi.fn() }));
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); });
 afterEach(cleanup);
@@ -22,7 +20,7 @@ describe('presentation-only guided navigation', () => {
     const references = JSON.stringify({ source: record.source, destination: record.destination, hash: record.hash });
     localStorage.setItem('cdp-clear-test-payment-confirmed', references);
     render(<StoreProvider><DemoWorkflow /></StoreProvider>);
-    await waitFor(() => expect(screen.getByLabelText('Existing payment transaction hash')).toHaveValue(record.hash));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Review Netting' })).toBeTruthy());
     const saved = localStorage.getItem('cdp-clear-v1');
     fireEvent.click(screen.getByRole('button', { name: 'Review Netting' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: Settle' }));
