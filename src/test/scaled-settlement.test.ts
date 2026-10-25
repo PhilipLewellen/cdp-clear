@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_OBLIGATIONS, netObligations } from '@/lib/netting';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
-import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaleTrades, scaledNet, snapshotUnchanged, usdcAmount } from '@/lib/scaled-settlement';
+import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaleTrades, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, type ScaledStatus } from '@/lib/scaled-settlement';
 
 const base = netObligations(SAMPLE_OBLIGATIONS);
 
