@@ -1,5 +1,8 @@
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
+import { SAMPLE_OBLIGATIONS } from '@/lib/netting';
+import { DEFAULT_SCALE, generateFingerprintedInstruction } from '@/lib/scaled-settlement';
 import { StoreProvider } from '@/lib/store';
 import { useStore } from '@/lib/use-store';
 import { netObligations } from '@/lib/netting';
@@ -25,5 +28,15 @@ describe('Demo initial state and saved edits', () => {
     localStorage.setItem('cdp-clear-v1', JSON.stringify({ trades: [{ id: 'T-001', receiver: 'A', amount: 2750, currency: 'USD', eligible: true }] }));
     render(<StoreProvider><Probe /></StoreProvider>);
     await waitFor(() => expect(observed?.trades[0]?.amount).toBe(2750));
+  });
+  it('restores the original financial snapshot and SHA-256 without modifying historical reconciliation', async () => {
+    vi.stubGlobal('crypto', webcrypto);
+    try {
+      const instruction = { ...await generateFingerprintedInstruction(SAMPLE_OBLIGATIONS, DEFAULT_SCALE), status: 'Reconciled' as const, txHash: 'a'.repeat(64), reconciledAt: '2026-10-25T10:00:00Z' };
+      localStorage.setItem('cdp-clear-v1', JSON.stringify({ trades: SAMPLE_OBLIGATIONS, scaledInstruction: instruction }));
+      render(<StoreProvider><Probe /></StoreProvider>);
+      await waitFor(() => expect(observed?.scaledInstruction).toEqual(instruction));
+      expect(JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').scaledInstruction).toEqual(instruction);
+    } finally { vi.unstubAllGlobals(); }
   });
 });
