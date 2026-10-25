@@ -76,7 +76,7 @@ export function DemoWorkflow() {
         <H100MarketPanel onScenario={setScenarioFixing} scenarioActive={scenarioMode} />
       </div>
       {!trades.length && <p className="mt-4 text-warning">No contracts saved. Add obligations in the original workspace; existing records have not been reset.</p>}
-      <Button asChild variant="outline" className="mt-5"><Link to="/">Review or edit obligations</Link></Button>
+      <Button asChild variant="outline" className="mt-5"><Link to="/obligations">Review or edit obligations</Link></Button>
     </section>
 
     <section hidden={step !== 1} aria-label="Net payment flows" className="demo-panel">

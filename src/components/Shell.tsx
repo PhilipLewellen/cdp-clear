@@ -6,10 +6,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info, RotateCcw } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
 
-const primaryTab = { to: "/demo", label: "Demo Workflow" } as const;
+const primaryTab = { to: "/", label: "Demo Workflow" } as const;
 const operationTabs = [
   { to: "/overview", label: "Overview" },
-  { to: "/", label: "Obligations" },
+  { to: "/obligations", label: "Obligations" },
   { to: "/netting", label: "Netting" },
   { to: "/settlement", label: "Settlement" },
   { to: "/activity", label: "Activity" },
@@ -22,7 +22,7 @@ export function Shell({ title, intro, children }: { title: string; intro: string
     <div className="workstation min-h-screen">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Button asChild variant="ghost" className="px-0 font-display text-base font-semibold"><Link to="/demo">CDP Clear</Link></Button>
+          <Button asChild variant="ghost" className="px-0 font-display text-base font-semibold"><Link to="/">CDP Clear</Link></Button>
           <div className="flex flex-wrap items-center justify-end gap-3"><span className="text-[11px] text-muted-foreground">STELLAR TESTNET <span className="mx-2 text-border">/</span> USDC <span className="mx-2 text-border">/</span> <b className="font-medium text-warning">DEMO · NO REAL FUNDS</b></span><WalletConnect /></div>
         </div>
       </header>
