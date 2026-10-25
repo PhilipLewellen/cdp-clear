@@ -1,3 +1,14 @@
+# Hackathon UX excellence pass
+- [x] Demo Workflow as primary experience: one step at a time, checkmarked progress indicator, per-step purpose sentence and primary action (Review Netting / Generate Settlement Instruction / state-driven settle action / View Audit Trail).
+- [x] Step 1 compact contract cards (ID, GPU-hours, agreed forward price, simulated fixing, obligation+payer); formulas in Advanced Details; H100 as optional "Explore Market Prices".
+- [x] Step 2 prominent gross→net, reduction, "3 payments reduced to one"; scaled settlement secondary with concise rationale; "Continue to Settlement" after generation.
+- [x] Step 3 single settlement card with state-driven primary action (Connect Wallet / Review Payment / Approve in Freighter / View Confirmed Payment); historical 1 USDC payment moved to Advanced Settlement Tools.
+- [x] Step 4 "Settlement Reconciled" hero (expected vs actual, sender/recipient, asset/issuer, hash, confirmation time, explorer link); exception test and historical reconciliation as advanced sections.
+- [x] Navigation: Demo Workflow primary tab, Operations group for the five other routes; confirmation before Reset demo data.
+- [x] Tests and browser validation.
+
+UX pass validation: 157 tests pass (2 new reset-confirmation tests); typecheck clean. Browser walkthrough confirmed the Operations nav group, per-step purpose sentences and primary actions, instruction generation leading to "Continue to Settlement", the state-driven Connect Wallet action, Advanced Settlement Tools / Advanced Verification grouping, instruction retention across Back navigation, and the reset confirmation with Cancel preserving state. No page errors; no financial or blockchain logic changed.
+
 # Phase 5 settlement exception testing
 - [x] Add "Test a Settlement Exception" to Demo Workflow Step 4, available with or without a scaled instruction (paste any confirmed hash).
 - [x] Isolated read-only panel: fetch real tx + paginated payment operations from Horizon, build a hypothetical instruction from actual sender/recipient/amount/asset/issuer.
