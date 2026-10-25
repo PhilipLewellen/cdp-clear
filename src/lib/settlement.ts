@@ -17,10 +17,10 @@ export interface Instruction {
   obligationSnapshot: string;
   status: SettleStatus;
   txHash: string;
-  issuerVerifiedAt?: string;
-  confirmedAt?: string;
-  reconciledAt?: string;
-  ledger?: number;
+  issuerVerifiedAt?: string | undefined;
+  confirmedAt?: string | undefined;
+  reconciledAt?: string | undefined;
+  ledger?: number | undefined;
   verifiedNote?: string;
 }
 export const publicAddress = (s: string) => /^G[A-Z2-7]{55}$/.test(s.trim());

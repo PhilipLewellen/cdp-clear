@@ -4,6 +4,7 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { type Party } from "@/lib/netting";
+import { obligationSnapshot } from '@/lib/settlement';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +21,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Trades() {
-  const { trades, setTrades } = useStore();
+  const { trades, setTrades, instruction } = useStore();
+  const settlementStatus = instruction?.obligationSnapshot === obligationSnapshot(trades) ? instruction.status : 'Uninstructed';
   const update = (i: number, patch: Partial<(typeof trades)[number]>) =>
     setTrades(trades.map((t, j) => (j === i ? { ...t, ...patch } : t)));
 
@@ -50,7 +52,7 @@ function Trades() {
                     </td>
                     <td><input aria-label={`${t.id} currency`} className={inputCls + " min-w-24"} value={t.currency} onChange={(e) => update(i, { currency: e.target.value.toUpperCase() })} /></td>
                     <td><input aria-label={`${t.id} gross obligation`} type="number" min={0} step="0.01" className={inputCls + " w-32 text-right"} value={t.amount} onChange={(e) => update(i, { amount: parseFloat(e.target.value) || 0 })} /></td>
-                    <td><Tag>Uninstructed</Tag></td>
+                    <td><Tag tone={settlementStatus === 'Reconciled' ? 'success' : 'muted'}>{settlementStatus}</Tag></td>
                     <td>
                       <Button variant="ghost" size="icon" aria-label={`Remove ${t.id}`} title={`Remove ${t.id}`} onClick={() => setTrades(trades.filter((_, j) => j !== i))}><Trash2 /></Button>
                     </td>
@@ -60,7 +62,7 @@ function Trades() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setTrades([...trades, { id: `T-${String(Math.max(0, ...trades.map(t => Number(t.id.replace("T-", "")) || 0)) + 1).padStart(3, "0")}`, receiver: "A", amount: 0, currency: "USD", settlementDate: trades[0]?.settlementDate ?? "2026-10-26", lifecycle: "Captured", eligible: true }])}><Plus />Add obligation</Button>
           <Button asChild><Link to="/netting">Determine NSO<ArrowRight /></Link></Button>
         </div>

@@ -34,10 +34,10 @@ export async function verifyTestnetPayment(i: VerifyInput): Promise<VerifyResult
   while (url && !visited.has(url)) {
     if (!url.startsWith(`${HORIZON_TESTNET}/`)) throw new Error('Untrusted operations endpoint.');
     visited.add(url);
-    const response = await fetch(url);
+    const response: Response = await fetch(url);
     if (!response.ok) return { ...confirmation, ok: false, reasons: ['Network confirmed; operation lookup unavailable.'] };
-    const page = await response.json();
-    const records = page?._embedded?.records ?? [];
+    const page: { _embedded?: { records: PaymentOperation[] }; _links?: { next?: { href: string } } } = await response.json();
+    const records: PaymentOperation[] = page?._embedded?.records ?? [];
     operations.push(...records);
     url = records.length === 200 ? page?._links?.next?.href : undefined;
   }
