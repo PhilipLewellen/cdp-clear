@@ -1,3 +1,8 @@
+# Phase 4 retrospective reconciliation
+- [ ] Add separate persistent TEST-SETTLEMENT-001 with saved Phase 3 evidence or explicit operator entry.
+- [ ] Independently verify all paginated operations, exact fields and allocation; retain actual results and audit times.
+- [ ] Test persistence, mismatch and read-only flows; preserve payments, balances and simulated netting.
+
 # Phase 3 separate Testnet payment
 - [x] Add fixed 1.0000000 USDC payment review, fresh prerequisites and Freighter signing.
 - [x] Implement exact signed Testnet submission, independent success verification and balance refresh without reconciling obligations.
