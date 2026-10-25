@@ -1,3 +1,8 @@
+# Verifiable settlement evidence
+- [ ] Capture versioned financial snapshots and browser SHA-256 fingerprints for new instructions only.
+- [ ] Reuse read-only Horizon verification to retain genuine operation details and checks; add Step 4 evidence review and JSON export.
+- [ ] Test deterministic hashes, integrity warnings, historical honesty, persistence, read-only verification and export.
+
 # Final homepage & settlement UX
 - [x] Homepage headline "From derivatives exposure to verified settlement." with supporting description above the four-step workflow.
 - [x] Historical 1 USDC payment + reconciliation removed from Demo Workflow; now in collapsed "Advanced Tools / Historical Test Payments" on the Settlement page (records untouched).
