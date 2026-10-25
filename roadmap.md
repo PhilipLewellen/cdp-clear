@@ -1,7 +1,9 @@
-# CDP Clear workstation redesign
-- [x] Apply compact charcoal/navy workstation styling and unified navigation/status bar.
-- [x] Redesign the editable trade blotter and dynamic gross-versus-net comparison.
-- [x] Organise settlement into four compact modules while preserving verification and lifecycle controls.
-- [x] Run financial regressions and verify the three-page workflow and desktop/mobile layouts.
+# CDP Clear presentation redesign
+- [x] Apply requested palette, slim shell and four compact navigation tabs.
+- [x] Simplify obligations toolbar/blotter and expandable metadata; preserve fresh samples and manual edits.
+- [x] Compact netting and add expandable provenance with actionable eligibility errors.
+- [x] Make settlement register left / selected details and verification right.
+- [x] Add truthful browser-local chronological activity without changing financial or verification rules.
+- [x] Test regressions, navigation, persistence and laptop/mobile layouts.
 
-Validation: 21 existing tests pass. Browser flow checked default and edited amounts, live issuer/network validation, a missing hash producing Exception without an explorer link, and stale-instruction protection. No page overflow at 1440, 800 or 390 pixels. No real successful payment was supplied; positive verification remains covered by existing controlled fixtures.
+Browser checks: fresh 2000/800/300 samples; 1500 net B→A; edited amount persisted on reload; ineligible trade rejected with a direct affected-trade link; live testnet issuer validation; missing hash yields Exception with no explorer link or network-confirmation event. No overflow at 1440, 800 and 390 pixels; no page errors. A real successful payment was not supplied; matching verification remains covered by controlled test fixtures.

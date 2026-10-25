@@ -29,6 +29,7 @@ function Settlement() {
   const [msg, setMsg] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<VerifyResult | null>(null);
   const [manualAck, setManualAck] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const current = useRef({ trades, instruction, history });
   current.current = { trades, instruction, history };
   const canCreate = r.ok && r.net > 0 && r.payer && r.payee && publicAddress(form.source) && publicAddress(form.destination) && form.source.trim() !== form.destination.trim() && publicAddress(form.assetIssuer);
@@ -89,32 +90,37 @@ function Settlement() {
   const displayedAmount = instruction?.amount ?? r.net;
   const currency = instruction?.currency ?? r.currency;
   const rows = instruction ? [...history.filter(row => row.id !== instruction.id), instruction] : history;
+  const selected = rows.find(row => row.id === selectedId);
   return <Shell title="Settlement & Reconciliation" intro="USDC cash-leg operations / NS-AB-001 · Independent testnet verification">
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-2 text-[10px] text-muted-foreground">
       <span>Payment Initiation <b className="ml-1 font-normal text-warning">Not Implemented</b></span><span>Wallet Signing <b className="ml-1 font-normal text-warning">Not Implemented</b></span><span>Testnet Transaction Verification <b className="ml-1 font-normal text-primary">Implemented</b></span>
     </div>
-    <div className="settlement-modules">
-      <section className="settlement-module">
-        <div className="module-heading"><h2>Settlement summary</h2><span>01 / OBLIGATION</span></div>
-        <div className="grid grid-cols-2 gap-4 border-b border-border pb-4">
-          <div><Term label="Contractual settlement obligation" meaning="Net cash obligation in the contractual currency; not derivative notional." /><p className="mt-1 font-mono text-xl">{fmt(displayedAmount, currency)}</p></div>
-          <div><Term label="Proposed tokenised cash settlement" meaning="Illustrative 1:1 conversion to testnet USDC. No live exchange rate or guaranteed value." /><p className="mt-1 font-mono text-xl text-primary">{displayedAmount.toFixed(2)} <span className="text-sm">USDC</span></p></div>
-        </div>
-        <dl className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 gap-y-2.5"><Row label="Netting set" value="NS-AB-001" /><Row label="Instruction reference" value={instruction?.id ?? 'Not generated'} /><Row label="Net payer / beneficiary" value={`CP-${instruction?.payer ?? r.payer ?? '—'} → CP-${instruction?.beneficiary ?? r.payee ?? '—'}`} /><Row label="Settlement network" value={NETWORK} /><dt className="text-muted-foreground">Lifecycle state</dt><dd><Tag tone={instruction?.status === 'Reconciled' ? 'success' : 'primary'}>{instruction?.status ?? 'Uninstructed'}</Tag></dd></dl>
-        <p className="mt-4 text-[10px] text-muted-foreground">Illustrative 1:1 assumption: 1 {currency} = 1 testnet USDC. No real funds.</p>
-        {!r.ok && <p role="alert" className="mt-3 text-xs text-destructive">{r.error}</p>}
-        {r.ok && r.net === 0 && <p className="mt-3 text-xs text-muted-foreground">Zero NSO — no cash-leg instruction required.</p>}
-        {instruction && !unchanged && <p role="alert" className="mt-3 text-xs text-destructive">Netting set changed. Discard this instruction and create a new one before reconciliation.</p>}
-      </section>
-      <section className="settlement-module">
-        <div className="module-heading"><h2>Settlement instruction register</h2><span>02 / REGISTER</span></div>
-        <div className="overflow-x-auto"><table className="workspace-table"><thead><tr><th>Reference</th><th>Payer</th><th>Beneficiary</th><th className="text-right">Amount</th><th>Asset</th><th>Network</th><th>Lifecycle</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td className="font-mono">{row.id}</td><td>CP-{row.payer ?? '—'}</td><td>CP-{row.beneficiary ?? '—'}</td><td className="text-right font-mono">{row.amount.toFixed(2)}</td><td>{row.assetCode}</td><td>Stellar Testnet</td><td><Tag tone={row.status === 'Reconciled' ? 'success' : 'warning'}>{row.status}</Tag></td></tr>)}{rows.length === 0 && <tr><td colSpan={7} className="text-muted-foreground">No settlement instructions</td></tr>}</tbody></table></div>
+    <div className="settlement-workspace">
+      <div className="settlement-side">
+      <section className="settlement-section">
+        <div className="module-heading"><h2>Settlement instruction register</h2><span>{rows.length} records</span></div>
+        <div className="overflow-x-auto"><table className="workspace-table"><thead><tr><th>Reference</th><th>Payer</th><th>To</th><th className="text-right">Amount</th><th>Asset</th><th>Lifecycle</th></tr></thead><tbody>{rows.map(row => <tr key={row.id} className={(selectedId ?? instruction?.id) === row.id ? 'selected-row' : ''}><td className="font-mono"><Button variant="ghost" className="!h-auto px-0 font-mono text-xs" onClick={() => setSelectedId(row.id)} aria-label={`Select ${row.id}`}>{row.id}</Button></td><td>CP-{row.payer ?? '—'}</td><td>CP-{row.beneficiary ?? '—'}</td><td className="text-right font-mono">{row.amount.toFixed(2)}</td><td>{row.assetCode}</td><td><Tag tone={row.status === 'Reconciled' ? 'success' : 'warning'}>{row.status}</Tag></td></tr>)}{rows.length === 0 && <tr><td colSpan={6} className="text-muted-foreground">No settlement instructions</td></tr>}</tbody></table></div>
         <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-2 text-[10px]">{LIFECYCLE.filter(status => !['Failed', 'Exception'].includes(status)).map((status, i) => <span key={status} className={instruction?.status === status ? 'text-primary' : 'text-muted-foreground'}>{i > 0 && <span className="mr-2 text-muted-foreground">→</span>}{status}</span>)}</div>
         <p className="mt-3 text-[10px] text-muted-foreground">Browser-local register · Failed and Exception states retained</p>
         {instruction && <Button variant="outline" className="mt-5" disabled={busy} onClick={clear}>{instruction.status === 'Reconciled' ? <FilePlus2 className="size-3.5" /> : <Trash2 className="size-3.5" />}{instruction.status === 'Reconciled' ? 'Start a new instruction' : 'Discard instruction'}</Button>}
       </section>
-      <section className="settlement-module">
-        <div className="module-heading"><h2>Stablecoin settlement details</h2><span>03 / INSTRUCTION</span></div>
+      <section className="settlement-section">
+        <div className="module-heading"><h2>Settlement summary</h2></div>
+        <div className="grid grid-cols-2 gap-4 border-b border-border pb-4">
+          <div><Term label="Contractual settlement obligation" meaning="Net cash obligation in the contractual currency; not derivative notional." /><p className="mt-1 font-mono text-base">{fmt(displayedAmount, currency)}</p></div>
+          <div><Term label="Proposed tokenised cash settlement" meaning="Illustrative 1:1 conversion to testnet USDC. No live exchange rate or guaranteed value." /><p className="mt-1 font-mono text-base text-primary">{displayedAmount.toFixed(2)} <span className="text-sm">USDC</span></p></div>
+        </div>
+        <dl className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 gap-y-2.5"><Row label="Netting set" value="NS-AB-001" /><Row label="Instruction reference" value={instruction?.id ?? 'Not generated'} /><Row label="Net payer / beneficiary" value={`CP-${instruction?.payer ?? r.payer ?? '—'} → CP-${instruction?.beneficiary ?? r.payee ?? '—'}`} /><Row label="Settlement network" value={NETWORK} /><dt className="text-muted-foreground">Lifecycle state</dt><dd><Tag tone={instruction?.status === 'Reconciled' ? 'success' : 'primary'}>{instruction?.status ?? 'Uninstructed'}</Tag></dd></dl>
+        <p className="mt-4 text-xs text-muted-foreground">Illustrative 1:1 assumption: 1 {currency} = 1 testnet USDC. No real funds.</p>
+        {!r.ok && <p role="alert" className="mt-3 text-xs text-destructive">{r.error}</p>}
+        {r.ok && r.net === 0 && <p className="mt-3 text-xs text-muted-foreground">Zero NSO — no cash-leg instruction required.</p>}
+        {instruction && !unchanged && <p role="alert" className="mt-3 text-xs text-destructive">Netting set changed. Discard this instruction and create a new one before reconciliation.</p>}
+      </section>
+      </div>
+      <div className="settlement-side">
+        {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
+      <section className="settlement-section">
+        <div className="module-heading"><h2>Stablecoin settlement details</h2><span>{instruction?.id ?? 'New instruction'}</span></div>
         {!instruction ? <>
           <div className="grid grid-cols-[70px_minmax(0,1fr)] gap-3"><Field label="Asset code"><input aria-label="Asset code" className={inputCls} value="USDC" readOnly /></Field><Field label="Proposed testnet issuer · validation required"><input aria-label="Asset issuer" className={inputCls} value={form.assetIssuer} onChange={e => { if (!e.target.value.trim().startsWith('S')) setForm({ ...form, assetIssuer: e.target.value }); else setMsg('Secret keys are not accepted.'); }} />{form.assetIssuer && !publicAddress(form.assetIssuer) && <span className="mt-1 block text-destructive">Enter a valid public G-address.</span>}</Field></div>
           <div className="mt-4"><Field label={`Source Stellar wallet · CP-${r.payer ?? '—'}`}><input aria-label="Payer public wallet" className={inputCls} placeholder="G… public Stellar Testnet address" value={form.source} onChange={e => { if (!e.target.value.trim().startsWith('S')) setForm({ ...form, source: e.target.value }); else setMsg('Secret keys are not accepted. Enter a public G-address only.'); }} />{form.source && !publicAddress(form.source) && <span className="mt-1 block text-destructive">Enter a valid public G-address.</span>}</Field></div>
@@ -129,18 +135,20 @@ function Settlement() {
           {instruction.status === 'Pending Authorisation' && <p className="mt-4 text-xs text-warning">Pending external wallet authorisation</p>}
         </>}
       </section>
-      <section className="settlement-module">
-        <div className="module-heading"><h2>On-chain confirmation & reconciliation</h2><span>04 / VERIFY</span></div>
-        <p className="mb-4 text-xs text-muted-foreground">Independent verification: success, asset, issuer, amount, payer and beneficiary.</p>
+      <section className="settlement-section">
+        <div className="module-heading"><h2>On-chain confirmation & reconciliation</h2></div>
+        
         {instruction ? <>
           {['Pending Authorisation', 'Submitted', 'Failed', 'Exception', 'Confirmed'].includes(instruction.status) && <><Field label="External transaction hash"><input aria-label="External transaction hash" className={inputCls} placeholder="64-character transaction hash" value={hash} onChange={e => setHash(e.target.value)} />{hash && !/^[0-9a-fA-F]{64}$/.test(hash.trim()) && <span className="mt-1 block text-destructive">Enter exactly 64 hexadecimal characters.</span>}</Field><Button className="mt-3" onClick={verify} disabled={busy || !instruction.issuerVerifiedAt || !/^[0-9a-fA-F]{64}$/.test(hash.trim()) || !unchanged}><Search className="size-3.5" />{busy ? 'Verifying testnet…' : 'Verify network transaction'}</Button></>}
           <div className="mt-4 border-y border-border py-3"><div className="mb-2 text-[10px] text-muted-foreground">NETWORK CONFIRMATION</div><p className="text-xs">{instruction.confirmedAt ? `Independently confirmed · Ledger ${instruction.ledger}` : 'No independently verified successful transaction.'}</p>{instruction.confirmedAt && <><p className="mt-1 font-mono text-[10px] text-muted-foreground">{instruction.confirmedAt}</p><a className="mt-2 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${instruction.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a></>}</div>
           <div className="mt-4"><div className="mb-2 text-[10px] text-muted-foreground">POST-TRADE RECONCILIATION</div><p className="text-xs text-muted-foreground">{instruction.verifiedNote ?? 'Pending network confirmation and matching against the obligation.'}</p>{instruction.status === 'Confirmed' && <Button className="mt-3" onClick={reconcile} disabled={!evidence}><CheckCircle2 className="size-3.5" />Reconcile cash-leg obligation</Button>}{instruction.status === 'Confirmed' && !evidence && <p className="mt-2 text-[10px] text-warning">Re-verify the hash after reopening this page before reconciliation.</p>}</div>
           {instruction.status === 'Exception' && <details className="mt-4 text-xs"><summary className="cursor-pointer text-muted-foreground">Manual operator review</summary><label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={manualAck} onChange={e => setManualAck(e.target.checked)} /><span>External review only; does not confirm or reconcile settlement.</span></label><Button variant="outline" className="mt-3" disabled={!manualAck} onClick={() => setInstruction({ ...instruction, status: 'Exception', verifiedNote: 'Manual operator review recorded — NOT independently confirmed or reconciled.' })}>Record manual review</Button></details>}
         </> : <div className="border-y border-border py-5 text-xs text-muted-foreground">Awaiting a validated settlement instruction.</div>}
-        <p className="mt-4 text-[10px] text-muted-foreground">Authorisation and execution remain external. Submitted records a supplied hash, not a payment sent by CDP Clear.</p>
-      </section>
+        
+      </section>        </>}
+      </div>
     </div>
+    <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Payment authorisation and execution remain external; Submitted means a supplied hash, not payment initiation. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
     {msg && <p role="status" className="border-l-2 border-warning pl-3 text-xs text-warning">{msg}</p>}
   </Shell>;
 }

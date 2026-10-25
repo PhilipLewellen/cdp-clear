@@ -3,7 +3,7 @@ import { Shell, Tag, Term, inputCls } from "@/components/Shell";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
-import { type Party } from "@/lib/netting";
+import { fmt, netObligations, type Party } from "@/lib/netting";
 import { obligationSnapshot } from '@/lib/settlement';
 
 export const Route = createFileRoute("/")({
@@ -21,46 +21,29 @@ export const Route = createFileRoute("/")({
 });
 
 function Trades() {
-  const { trades, setTrades, instruction } = useStore();
+  const { trades, setTrades, instruction, recordActivity, reset } = useStore();
   const settlementStatus = instruction?.obligationSnapshot === obligationSnapshot(trades) ? instruction.status : 'Uninstructed';
   const update = (i: number, patch: Partial<(typeof trades)[number]>) =>
     setTrades(trades.map((t, j) => (j === i ? { ...t, ...patch } : t)));
 
-  return (
-    <Shell title="Bilateral Obligations Blotter" intro="Trade capture / NS-AB-001 · Tokenised compute derivatives">
-      <section className="border-y border-border bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
-          <h2>Contractual cash obligations <span className="ml-2 font-mono text-xs text-muted-foreground">{trades.length} records</span></h2>
-          <span className="text-[10px] text-muted-foreground">Illustrative valuation inputs · not trade notionals</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="workspace-table">
-            <thead><tr><th>Trade Reference</th><th>Netting Set</th><th>Payer</th><th>Beneficiary</th><th>Currency</th><th className="text-right">Gross Obligation</th><th>Settlement Date</th><th>Lifecycle Status</th><th /></tr></thead>
-            <tbody>{trades.map((t, i) => <tr key={t.id}>
-              <td className="font-mono">{t.id}</td><td className="font-mono text-muted-foreground">NS-AB-001</td><td className="font-mono">CP-{t.receiver === "A" ? "B" : "A"}</td>
-              <td><select aria-label={`${t.id} beneficiary`} className={inputCls + " min-w-20"} value={t.receiver} onChange={e => update(i, { receiver: e.target.value as Party })}><option value="A">CP-A</option><option value="B">CP-B</option></select></td>
-              <td><input aria-label={`${t.id} currency`} className={inputCls + " w-20"} value={t.currency} onChange={e => update(i, { currency: e.target.value.toUpperCase() })} /></td>
-              <td><input aria-label={`${t.id} gross obligation`} type="number" min={0} step="0.01" className={inputCls + " w-28 text-right"} value={t.amount} onChange={e => update(i, { amount: parseFloat(e.target.value) || 0 })} /></td>
-              <td><input aria-label={`${t.id} settlement date`} type="date" className={inputCls + " w-36"} value={t.settlementDate ?? "2026-10-26"} onChange={e => update(i, { settlementDate: e.target.value })} /></td>
-              <td><Tag tone={settlementStatus === 'Reconciled' ? 'success' : 'muted'}>{settlementStatus === 'Uninstructed' ? t.lifecycle ?? 'Validated' : settlementStatus}</Tag></td>
-              <td><Button variant="ghost" size="icon" aria-label={`Remove ${t.id}`} title={`Remove ${t.id}`} onClick={() => setTrades(trades.filter((_, j) => j !== i))}><Trash2 className="size-3.5" /></Button></td>
-            </tr>)}</tbody>
-          </table>
-        </div>
-        <div className="flex flex-wrap justify-between gap-3 px-3 py-3">
-          <Button variant="outline" onClick={() => setTrades([...trades, { id: `T-${String(Math.max(0, ...trades.map(t => Number(t.id.replace("T-", "")) || 0)) + 1).padStart(3, "0")}`, receiver: "A", amount: 0, currency: "USD", settlementDate: trades[0]?.settlementDate ?? "2026-10-26", lifecycle: "Captured", eligible: true }])}><Plus className="size-3.5" />Add obligation</Button>
-          <Button asChild><Link to="/netting">Determine Net Settlement Obligation<ArrowRight className="size-3.5" /></Link></Button>
-        </div>
-      </section>
-      <section className="grid border-y border-border bg-card md:grid-cols-[1fr_1.3fr]">
-        <div className="border-b border-border p-4 md:border-b-0 md:border-r">
-          <h2 className="mb-4">Trade metadata</h2>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs"><dt className="text-muted-foreground">Counterparty pair</dt><dd className="font-mono">CP-A / CP-B</dd><dt className="text-muted-foreground">Netting set</dt><dd className="font-mono">NS-AB-001</dd><dt className="text-muted-foreground">Settlement date</dt><dd className="font-mono">{new Set(trades.map(t => t.settlementDate)).size > 1 ? 'Multiple dates' : trades[0]?.settlementDate ?? '—'}</dd><dt className="text-muted-foreground">Settlement state</dt><dd><Tag>{settlementStatus}</Tag></dd></dl>
-        </div>
-        <div className="p-4"><div className="mb-2"><Term label="Netting eligibility" meaning="All obligations must be eligible and share counterparties, netting set, currency and settlement date. An enforceable netting agreement is assumed." /></div>
-          <div className="flex flex-wrap gap-4">{trades.map((t, i) => <label key={t.id} className="flex items-center gap-2 border-b border-border py-2 text-xs"><input aria-label={`${t.id} eligibility`} type="checkbox" checked={t.eligible !== false} onChange={e => update(i, { eligible: e.target.checked })} /><span className="font-mono">{t.id}</span><span className="text-muted-foreground">{t.eligible !== false ? 'Eligible' : 'Excluded'}</span></label>)}</div>
-        </div>
-      </section>
-    </Shell>
-  );
+  const r = netObligations(trades);
+  const contextDate = trades[0]?.settlementDate ?? '2026-10-26';
+  const calculate = () => recordActivity({ category: 'Demo operation', action: 'Netting recalculated', reference: 'NS-AB-001', detail: r.ok ? `${fmt(r.gross, r.currency)} gross / ${fmt(r.net, r.currency)} net · CP-${r.payer ?? '—'} → CP-${r.payee ?? '—'}` : r.error ?? 'Netting rejected' });
+  return <Shell title="Settlement Obligations" intro={`NS-AB-001 / CP-A–CP-B / ${trades[0]?.currency ?? 'USD'} / ${contextDate === '2026-10-26' ? '26 Oct 2026' : contextDate}`}>
+    <section className="border border-border rounded bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+        <span className="text-xs text-muted-foreground">{trades.length} obligations · Illustrative cash values</span>
+        <div className="flex gap-2"><Button variant="outline" onClick={() => setTrades([...trades, { id: `T-${String(Math.max(0, ...trades.map(t => Number(t.id.replace('T-', '')) || 0)) + 1).padStart(3, '0')}`, receiver: 'A', amount: 0, currency: 'USD', settlementDate: contextDate, lifecycle: 'Captured', eligible: true }])}><Plus className="size-3.5" />Add Obligation</Button><Button asChild><Link to="/netting" onClick={calculate}>Calculate Net<ArrowRight className="size-3.5" /></Link></Button></div>
+      </div>
+      {trades.length ? <div className="overflow-x-auto"><table className="workspace-table"><thead><tr><th>Ref</th><th>Payer</th><th>Beneficiary</th><th>Currency</th><th className="text-right">Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>{trades.map((t,i) => <tr id={t.id} key={t.id}>
+        <td className="font-mono">{t.id}</td><td className="font-mono">CP-{t.receiver === 'A' ? 'B' : 'A'}</td><td><select aria-label={`${t.id} beneficiary`} className={inputCls + ' min-w-20'} value={t.receiver} onChange={e => update(i,{receiver:e.target.value as Party})}><option value="A">CP-A</option><option value="B">CP-B</option></select></td>
+        <td><input aria-label={`${t.id} currency`} className={inputCls + ' w-20'} value={t.currency} onChange={e => update(i,{currency:e.target.value.toUpperCase()})} /></td>
+        <td><input aria-label={`${t.id} gross obligation`} type="number" min={0} step="0.01" className={inputCls + ' w-32 text-right'} value={t.amount} onChange={e => update(i,{amount:parseFloat(e.target.value)||0})} /></td>
+        <td><Tag tone={t.eligible === false ? 'warning' : settlementStatus === 'Reconciled' ? 'success' : 'muted'}>{t.eligible === false ? 'Ineligible' : settlementStatus === 'Uninstructed' ? t.lifecycle === 'Captured' ? 'Captured' : 'Valid · Eligible' : settlementStatus}</Tag></td>
+        <td><Button variant="ghost" size="icon" aria-label={`Remove ${t.id}`} title={`Remove ${t.id}`} onClick={() => setTrades(trades.filter((_,j) => j !== i))}><Trash2 className="size-3.5" /></Button></td>
+      </tr>)}</tbody></table></div> : <div className="p-6"><p className="mb-4 text-sm text-muted-foreground">No obligations in this netting set.</p><Button variant="outline" onClick={reset}>Restore sample obligations</Button></div>}
+      <div className="flex flex-wrap justify-between gap-3 border-t border-border px-4 py-3 text-xs"><span className="text-muted-foreground">Aggregate gross <b className="ml-2 font-mono font-normal text-foreground">{fmt(trades.reduce((sum,t) => sum+t.amount,0), trades[0]?.currency ?? 'USD')}</b></span><span className="text-muted-foreground">Settlement state <Tag>{settlementStatus}</Tag></span></div>
+    </section>
+    <details className="border-y border-border p-4"><summary>Netting metadata & eligibility</summary><div className="mt-4 grid gap-6 md:grid-cols-2"><div><Term label="Contractual netting assumptions" meaning="Same counterparties, currency, netting set and settlement date; eligible obligations and an enforceable agreement. No novation or CCP guarantees." /><dl className="mt-3 grid grid-cols-2 gap-3 text-sm"><dt className="text-muted-foreground">Counterparties</dt><dd className="font-mono">CP-A / CP-B</dd><dt className="text-muted-foreground">Netting set</dt><dd className="font-mono">NS-AB-001</dd></dl></div><div className="space-y-2">{trades.map((t,i) => <div key={t.id} className="flex flex-wrap items-center gap-3"><span className="font-mono text-xs">{t.id}</span><input aria-label={`${t.id} settlement date`} type="date" className={inputCls + ' max-w-40'} value={t.settlementDate ?? '2026-10-26'} onChange={e => update(i,{settlementDate:e.target.value})} /><label className="flex items-center gap-2 text-xs"><input aria-label={`${t.id} eligibility`} type="checkbox" checked={t.eligible !== false} onChange={e => update(i,{eligible:e.target.checked})} />Eligible</label></div>)}</div></div></details>
+  </Shell>;
 }
