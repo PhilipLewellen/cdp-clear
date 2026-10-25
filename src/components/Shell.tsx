@@ -4,6 +4,7 @@ import { useStore } from "@/lib/use-store";
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, RotateCcw } from 'lucide-react';
+import { WalletConnect } from '@/components/WalletConnect';
 
 const tabs = [
   { to: "/overview", label: "Overview" },
@@ -20,7 +21,7 @@ export function Shell({ title, intro, children }: { title: string; intro: string
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <span className="font-display text-base font-semibold">CDP Clear</span>
-          <span className="text-[11px] text-muted-foreground">STELLAR TESTNET <span className="mx-2 text-border">/</span> USDC <span className="mx-2 text-border">/</span> <b className="font-medium text-warning">DEMO · NO REAL FUNDS</b></span>
+          <div className="flex flex-wrap items-center justify-end gap-3"><span className="text-[11px] text-muted-foreground">STELLAR TESTNET <span className="mx-2 text-border">/</span> USDC <span className="mx-2 text-border">/</span> <b className="font-medium text-warning">DEMO · NO REAL FUNDS</b></span><WalletConnect /></div>
         </div>
       </header>
       <nav aria-label="Operations workflow" className="border-b border-border">
