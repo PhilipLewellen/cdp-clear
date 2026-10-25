@@ -3,6 +3,7 @@ import { STELLAR_CONFIG } from '@/lib/stellar-config';
 import { verifyTestnetAsset, verifyTestnetPayment } from '@/lib/stellar';
 
 export const TEST_PAYMENT_AMOUNT = '1.0000000';
+const hex = (bytes: Uint8Array) => Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 export interface PreparedTestPayment { source: string; destination: string; xdr: string; feeXlm: string; expiresAt: number; }
 export interface ConfirmedTestPayment { hash: string; ledger?: number; }
 
@@ -52,14 +53,14 @@ export async function submitTestPayment(payment: PreparedTestPayment, signedXdr:
   const { Horizon, TransactionBuilder, Transaction, Networks, Keypair } = await import('@stellar/stellar-sdk');
   const original = TransactionBuilder.fromXDR(payment.xdr, Networks.TESTNET);
   const signed = TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET);
-  if (!(signed instanceof Transaction) || signed.hash().toString('hex') !== original.hash().toString('hex') || !signed.signatures.length) throw new Error('Freighter returned an altered or unsigned transaction. Nothing submitted.');
+  if (!(signed instanceof Transaction) || hex(signed.hash()) !== hex(original.hash()) || !signed.signatures.length) throw new Error('Freighter returned an altered or unsigned transaction. Nothing submitted.');
   const signer = Keypair.fromPublicKey(payment.source);
-  if (!signed.signatures.some(signature => signer.verify(signed.hash(), signature.signature()))) throw new Error('Signed transaction lacks a valid payer signature. Nothing submitted.');
+  if (!signed.signatures.some(signature => signer.verify(signed.hash(), signature.signature))) throw new Error('Signed transaction lacks a valid payer signature. Nothing submitted.');
   if (Date.now() >= payment.expiresAt) throw new Error('Transaction expired before submission. Review and sign again.');
   const server = new Horizon.Server(STELLAR_CONFIG.horizonUrl);
   const root = await server.root();
   if (root.network_passphrase !== Networks.TESTNET) throw new Error('Stellar Testnet network could not be verified.');
-  const hash = signed.hash().toString('hex');
+  const hash = hex(signed.hash());
   onSubmission(hash); // From here, failures may be ambiguous: never auto-resubmit.
   const response = await server.submitTransaction(signed);
   if (!response.successful || response.hash !== hash) throw new Error('Horizon did not confirm the expected transaction. Check status; do not resend.');
