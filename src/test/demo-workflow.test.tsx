@@ -8,6 +8,7 @@ import { SAMPLE_OBLIGATIONS } from '@/lib/netting';
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <span>{children}</span> }));
 vi.mock('@/components/Shell', () => ({ Shell: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
 vi.mock('@/components/TestSettlementPayment', () => ({ TestSettlementPayment: () => null }));
+vi.mock('@/components/ScaledSettlement', () => ({ ScaledSettlementCalc: () => null, ScaledSettlementPayment: () => null, ScaledSettlementVerify: () => null }));
 vi.mock('@/components/WalletSettlementAsset', () => ({ WalletSettlementAsset: () => null }));
 vi.mock('@/lib/test-reconciliation', async original => ({ ...await original<typeof import('@/lib/test-reconciliation')>(), verifyExistingTestPayment: vi.fn() }));
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); });
