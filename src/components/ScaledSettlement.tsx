@@ -206,5 +206,3 @@ export function ScaledSettlementVerify() {
     {instruction.status === 'Reconciled' && <p className="mt-4 text-sm text-success">Scaled settlement reconciled against instruction {instruction.id}. The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>}
   </section>;
 }
-
-export { reconcileScaled, DEFAULT_ISSUER };

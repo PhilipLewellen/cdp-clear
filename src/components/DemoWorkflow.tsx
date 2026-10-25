@@ -7,6 +7,7 @@ import { TestSettlementPayment } from '@/components/TestSettlementPayment';
 import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
 import { H100MarketPanel } from '@/components/H100MarketPanel';
+import { ScaledSettlementCalc, ScaledSettlementPayment, ScaledSettlementVerify } from '@/components/ScaledSettlement';
 import { useStore } from '@/lib/use-store';
 import { deriveObligation, fmt, netObligations } from '@/lib/netting';
 import { marketScenario } from '@/lib/h100';
