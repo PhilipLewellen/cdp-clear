@@ -18,6 +18,7 @@
 - Overview uses a separate /overview route and preserves / as Obligations so existing links remain valid.
 - The guided presentation lives at /demo and reuses the existing store, payment and reconciliation components; preserve / as Obligations and keep step panels mounted to avoid losing an in-progress payment review on Back/Next.
 - Overview scenario calculations and current-snapshot settlement monitoring live in src/lib/risk-overview.ts; scenarios operate on copied economics and never write booked state, while signed cash deltas preserve meaning across payer reversals.
+- H100 market reference lives in src/lib/h100.ts (Compute Screener index.json fetch, validation, session cache) with the panel in src/components/H100MarketPanel.tsx; market scenarios apply one common external fixing to copied economics only and never touch booked trades, instructions, wallet or reconciliation state.
 - Reconciled obligation snapshots cannot be instructed or allocated twice in the local register; supplying a hash records verification requested rather than network submission.
 - Keep a browser-local reconciled instruction register and reject reused transaction hashes; this protects the demo against duplicate allocation without implying cross-user persistence.
 - Verify the fixed Horizon testnet network and exact USDC issuer asset before instruction validation and payment reconciliation; on-chain matching does not attest real-world issuer authenticity.

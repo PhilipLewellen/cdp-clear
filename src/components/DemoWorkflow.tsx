@@ -6,19 +6,29 @@ import { Button } from '@/components/ui/button';
 import { TestSettlementPayment } from '@/components/TestSettlementPayment';
 import { TestSettlementReconciliation } from '@/components/TestSettlementReconciliation';
 import { WalletSettlementAsset } from '@/components/WalletSettlementAsset';
+import { H100MarketPanel } from '@/components/H100MarketPanel';
 import { useStore } from '@/lib/use-store';
-import { fmt, netObligations } from '@/lib/netting';
+import { deriveObligation, fmt, netObligations } from '@/lib/netting';
+import { marketScenario } from '@/lib/h100';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
 
 export function DemoWorkflow() {
   const { trades, testSettlement } = useStore();
   const [step, setStep] = useState(0);
   const [refresh, setRefresh] = useState(0);
+  const [scenarioFixing, setScenarioFixing] = useState<number | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const r = netObligations(trades);
+  const scenario = scenarioFixing === null ? null : marketScenario(trades, scenarioFixing);
+  const scenarioMode = Boolean(scenario?.ok);
+  const shown = scenarioMode
+    ? trades.map(t => t.economics ? deriveObligation({ ...t, economics: { ...t.economics, fixing: scenarioFixing as number } }) : t)
+    : trades;
+  const shownNet = scenarioMode ? scenario : r;
   const result = testSettlement?.result;
   const confirmed = result?.checks.confirmed === true && Boolean(result.confirmedAt);
   const direction = r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment needed';
+  const shownDirection = shownNet?.payer ? `CP-${shownNet.payer} → CP-${shownNet.payee}` : 'Fully offset · no payment needed';
   const labels = ['Calculate', 'Net', 'Settle', 'Verify'];
   const changeStep = (next: number) => { setStep(next); requestAnimationFrame(() => heading.current?.focus()); };
   return <Shell title="Demo Workflow" intro="GPU compute forwards → bilateral payment netting → separate Testnet payment → on-chain verification">
@@ -28,15 +38,30 @@ export function DemoWorkflow() {
       <span className="text-xs text-muted-foreground">Step {step + 1} of 4 · {step < 2 ? 'Simulated contract economics' : 'Live Stellar Testnet · no real funds'}</span>
     </div>
     <section hidden={step !== 0} aria-label="Calculate contracts" className="demo-panel">
-      <p className="mb-5 text-sm">GPU compute forward contracts create cash payments between CP-A and CP-B when the simulated fixing differs from the agreed strike price.</p>
-      <div className="demo-contracts">{trades.map(t => <article key={t.id} className="rounded border border-border bg-card p-4">
+      <p className="mb-4 text-sm">GPU compute forward contracts create cash payments between CP-A and CP-B when the simulated fixing differs from the agreed strike price.</p>
+      <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="Calculation mode">
+        <Button variant={scenarioMode ? 'ghost' : 'default'} onClick={() => setScenarioFixing(null)}>Original Demo</Button>
+        <Button variant={scenarioMode ? 'default' : 'ghost'} disabled={!scenarioMode} onClick={() => {}}>Market Data Scenario</Button>
+        {scenarioMode && <span className="text-xs text-muted-foreground">Common H100 fixing {fmt(scenarioFixing as number, 'USD')} / GPU-hour</span>}
+      </div>
+      {scenarioMode && <p className="mb-5 rounded border border-primary bg-card p-3 text-sm text-primary">Indicative scenario using published H100 rental pricing — not a contractual settlement fixing. Booked contracts and settlement records are unchanged.</p>}
+      <div className="demo-contracts">{shown.map(t => <article key={t.id} className="rounded border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3"><h3 className="font-mono">{t.id}</h3><span className="text-xs text-muted-foreground">GPU compute forward</span></div>
         <p className="mt-4 font-mono text-xl text-primary">{Number.isFinite(t.amount) ? fmt(t.amount, t.currency) : 'Invalid economics'}</p>
         <p className="mt-2 text-sm">{t.amount === 0 ? 'No cash payment' : `CP-${t.receiver === 'A' ? 'B' : 'A'} pays CP-${t.receiver}`}</p>
-        {t.economics && <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs"><dt className="text-muted-foreground">GPU-hours</dt><dd className="text-right font-mono">{t.economics.quantity.toLocaleString('en-US')}</dd><dt className="text-muted-foreground">Strike / hour</dt><dd className="text-right font-mono">{fmt(t.economics.strike, t.currency)}</dd><dt className="text-muted-foreground">Simulated fixing</dt><dd className="text-right font-mono">{fmt(t.economics.fixing, t.currency)}</dd></dl>}
-        <details className="mt-4"><summary>Advanced Details</summary><p className="mt-3 text-xs text-muted-foreground">{t.economics ? `Long CP-${t.economics.longParty} payoff = GPU-hours × (simulated fixing − strike). ` : ''}Value date {t.settlementDate ?? 'Not specified'} · {t.eligible === false ? 'Ineligible' : 'Eligible'} · {t.lifecycle ?? 'Captured'}</p></details>
+        {t.economics && <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs"><dt className="text-muted-foreground">GPU-hours</dt><dd className="text-right font-mono">{t.economics.quantity.toLocaleString('en-US')}</dd><dt className="text-muted-foreground">Strike / hour</dt><dd className="text-right font-mono">{fmt(t.economics.strike, t.currency)}</dd><dt className="text-muted-foreground">{scenarioMode ? 'H100 scenario fixing' : 'Simulated fixing'}</dt><dd className="text-right font-mono">{fmt(t.economics.fixing, t.currency)}</dd></dl>}
+        <details className="mt-4"><summary>Advanced Details</summary><p className="mt-3 text-xs text-muted-foreground">{t.economics ? `Long CP-${t.economics.longParty} payoff = GPU-hours × (${scenarioMode ? 'H100 scenario fixing' : 'simulated fixing'} − strike). ` : ''}Value date {t.settlementDate ?? 'Not specified'} · {t.eligible === false ? 'Ineligible' : 'Eligible'} · {t.lifecycle ?? 'Captured'}</p></details>
       </article>)}</div>
-      {!trades.length && <p className="text-warning">No contracts saved. Add obligations in the original workspace; existing records have not been reset.</p>}
+      {scenarioMode && scenario && r.ok && <div className="mt-6 rounded border border-border bg-card p-4" aria-label="Scenario comparison">
+        <p className="text-sm font-semibold">Net settlement comparison</p>
+        <div className="mt-4 grid gap-3 text-xs">
+          <div><p className="flex justify-between"><span className="text-muted-foreground">Original demo net · {direction}</span><span className="font-mono">{fmt(r.net, r.currency)}</span></p><progress className="cash-bar gross mt-1" max={Math.max(r.net, scenario.net, 1)} value={r.net}/></div>
+          <div><p className="flex justify-between"><span className="text-muted-foreground">Market scenario net · {shownDirection}</span><span className="font-mono">{fmt(scenario.net, scenario.currency)}</span></p><progress className="cash-bar mt-1" max={Math.max(r.net, scenario.net, 1)} value={scenario.net}/></div>
+          <p className="border-t border-border pt-3">Difference <span className="font-mono">{fmt(Math.abs(scenario.net - r.net), r.currency)}</span> {scenario.net === r.net ? '· unchanged' : scenario.net > r.net ? 'higher' : 'lower'}{scenario.payer !== r.payer ? ' · payment direction reversed' : ''}</p>
+        </div>
+      </div>}
+      <H100MarketPanel onScenario={setScenarioFixing} scenarioActive={scenarioMode} />
+      {!trades.length && <p className="mt-4 text-warning">No contracts saved. Add obligations in the original workspace; existing records have not been reset.</p>}
       <Button asChild variant="outline" className="mt-5"><Link to="/">Review or edit obligations</Link></Button>
     </section>
     <section hidden={step !== 1} aria-label="Net payment flows" className="demo-panel">
