@@ -3,7 +3,7 @@ import { Account, Asset, Horizon, Keypair, Networks, Operation, TransactionBuild
 import { prepareTestPayment, submitTestPayment, readTestPayment, TEST_PAYMENT_AMOUNT } from '@/lib/test-payment';
 import { loadWalletBalances, accountBalances, USDC_ASSET } from '@/lib/wallet-balances';
 import { verifyTestnetAsset, verifyTestnetPayment } from '@/lib/stellar';
-vi.mock('@/lib/stellar', () => ({ verifyTestnetAsset: vi.fn(), verifyTestnetPayment: vi.fn() }));
+vi.mock('@/lib/stellar', async original => ({ ...await original<typeof import('@/lib/stellar')>(), verifyTestnetAsset: vi.fn(), verifyTestnetPayment: vi.fn() }));
 vi.mock('@/lib/wallet-balances', async original => ({ ...await original<typeof import('@/lib/wallet-balances')>(), loadWalletBalances: vi.fn() }));
 // Ephemeral fixture keys never leave this isolated test or enter application code.
 const payer = Keypair.random(), recipient = Keypair.random().publicKey();
