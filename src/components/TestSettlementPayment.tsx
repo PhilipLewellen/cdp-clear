@@ -20,28 +20,28 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
   current.current = wallet;
   const busy = Boolean(phase);
   useEffect(() => {
-    const sync = () => setPending(pendingAttempt);
+    const sync = () => setPending(testPaymentSession.pending);
     const stored = sessionStorage.getItem('cdp-clear-test-payment-pending');
     if (stored) {
-      try { const saved = JSON.parse(stored); if (/^[a-f0-9]{64}$/.test(saved.hash) && typeof saved.payment?.source === 'string' && typeof saved.payment?.destination === 'string') pendingAttempt = saved; } catch { /* Not payment evidence. */ }
+      try { const saved = JSON.parse(stored); if (/^[a-f0-9]{64}$/.test(saved.hash) && typeof saved.payment?.source === 'string' && typeof saved.payment?.destination === 'string') testPaymentSession.pending = saved; } catch { /* Not payment evidence. */ }
     }
     sync(); window.addEventListener('cdp-clear-payment-update', sync);
     return () => window.removeEventListener('cdp-clear-payment-update', sync);
   }, []);
   const remember = (payment: PreparedTestPayment, hash: string) => {
-    pendingAttempt = { payment, hash }; setPending(pendingAttempt);
+    testPaymentSession.pending = { payment, hash }; setPending(testPaymentSession.pending);
     // Public addresses and hash only; never persist signed XDR or keys.
     sessionStorage.setItem('cdp-clear-test-payment-pending', JSON.stringify({ hash, payment: { ...payment, xdr: '' } }));
     window.dispatchEvent(new Event('cdp-clear-payment-update'));
   };
   const finish = (result: ConfirmedTestPayment) => {
-    setConfirmed(result); setPending(null); pendingAttempt = null;
+    setConfirmed(result); setPending(null); testPaymentSession.pending = null;
     sessionStorage.removeItem('cdp-clear-test-payment-pending');
     window.dispatchEvent(new Event('cdp-clear-payment-update'));
     setPrepared(null); onSuccess();
   };
   const review = async () => {
-    if (guard.current || executionLocked || pendingAttempt || confirmed) return;
+    if (guard.current || testPaymentSession.locked || testPaymentSession.pending || confirmed) return;
     guard.current = true; setPhase('Checking Testnet prerequisites…'); setError(''); setPrepared(null);
     try {
       const source = await current.current.checkConnection();
@@ -52,8 +52,8 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
     finally { guard.current = false; setPhase(''); }
   };
   const send = async () => {
-    if (!prepared || guard.current || executionLocked || pendingAttempt || confirmed) return;
-    guard.current = true; executionLocked = true; setError(''); setPhase('Rechecking funds and Testnet…');
+    if (!prepared || guard.current || testPaymentSession.locked || testPaymentSession.pending || confirmed) return;
+    guard.current = true; testPaymentSession.locked = true; setError(''); setPhase('Rechecking funds and Testnet…');
     try {
       if (await current.current.checkConnection() !== prepared.source) throw new Error('Connected payer changed. Review again.');
       const fresh = await prepareTestPayment(prepared.source, prepared.destination);
@@ -67,10 +67,10 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
       if (result) finish(result);
       else setError('Confirmation is pending. Check status below; do not send another payment.');
     } catch (e) { setError(paymentError(e)); }
-    finally { guard.current = false; executionLocked = false; setPhase(''); }
+    finally { guard.current = false; testPaymentSession.locked = false; setPhase(''); }
   };
   const check = async () => {
-    if (!pending || guard.current || executionLocked) return;
+    if (!pending || guard.current || testPaymentSession.locked) return;
     guard.current = true; setPhase('Checking submitted transaction…'); setError('');
     try { const result = await readTestPayment(pending.hash, pending.payment); if (result) finish(result); else setError('Not confirmed yet. Do not resend; check again later.'); }
     catch (e) { setError(`${paymentError(e)} Do not resend until the transaction outcome is resolved.`); }
@@ -81,7 +81,7 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
     <p className="mb-4 text-xs text-warning">{TEST_PAYMENT_AMOUNT} USDC test tokens only. This does not pay the simulated net obligation or reconcile any instruction.</p>
     <dl className="mb-4 grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt className="text-muted-foreground">Sender</dt><dd className="break-all font-mono">{wallet.status === 'connected' ? wallet.address : 'Connect Freighter on Testnet'}</dd><dt className="text-muted-foreground">Asset issuer</dt><dd className="break-all font-mono">{USDC_ASSET.issuer}</dd></dl>
     <label className="block text-xs text-muted-foreground">Test payment recipient public address<input aria-label="Test payment recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy || Boolean(pending) || Boolean(confirmed)} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
-    {!pending && !confirmed && <Button className="mt-3" disabled={busy || wallet.status !== 'connected' || !recipient || executionLocked} onClick={review}><Send className="size-3.5" />Send Test Settlement</Button>}
+    {!pending && !confirmed && <Button className="mt-3" disabled={busy || wallet.status !== 'connected' || !recipient || testPaymentSession.locked} onClick={review}><Send className="size-3.5" />Send Test Settlement</Button>}
     {prepared && !pending && !confirmed && <div role="group" aria-label="Confirm test payment" className="mt-4 border-y border-border py-4">
       <h3 className="mb-3 text-sm font-medium">Confirm Testnet payment</h3>
       <dl className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt>Sender</dt><dd className="break-all font-mono">{prepared.source}</dd><dt>Recipient</dt><dd className="break-all font-mono">{prepared.destination}</dd><dt>Asset / amount</dt><dd className="font-mono">{TEST_PAYMENT_AMOUNT} USDC</dd><dt>Network</dt><dd>Stellar Testnet</dd><dt>Network fee</dt><dd className="font-mono">{prepared.feeXlm} XLM</dd></dl>
@@ -89,7 +89,7 @@ export function TestSettlementPayment({ onSuccess }: { onSuccess: () => void }) 
     </div>}
     {busy && <p role="status" className="mt-3 text-xs text-primary">{phase}</p>}
     {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
-    {pending && !confirmed && <div className="mt-3 text-xs"><p>Submission outcome unresolved. Another payment is blocked, including after reload in this tab.</p><Button variant="outline" className="mt-2" disabled={busy || executionLocked} onClick={check}><RefreshCw className="size-3.5" />Check payment status</Button></div>}
+    {pending && !confirmed && <div className="mt-3 text-xs"><p>Submission outcome unresolved. Another payment is blocked, including after reload in this tab.</p><Button variant="outline" className="mt-2" disabled={busy || testPaymentSession.locked} onClick={check}><RefreshCw className="size-3.5" />Check payment status</Button></div>}
     {confirmed && <div role="status" className="mt-4 text-xs text-success"><p>1 USDC test payment independently confirmed{confirmed.ledger ? ` · Ledger ${confirmed.ledger}` : ''}. No obligation reconciled.</p><p className="mt-2 break-all font-mono">{confirmed.hash}</p><a className="mt-2 inline-block text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${confirmed.hash}`} target="_blank" rel="noreferrer">Inspect confirmed test payment on Stellar Expert ↗</a></div>}
     <p className="mt-3 text-[10px] text-muted-foreground">Freighter signs locally. Never enter a seed phrase or private key. Circle-documented Testnet USDC has no financial value or USD backing.</p>
   </section>;
