@@ -37,7 +37,8 @@ describe('separate Phase 3 Testnet payment', () => {
     setup(); const data = await loadWalletBalances(source, recipient); if (data.beneficiary) data.beneficiary.trustline = false;
     await expect(prepareTestPayment(source, recipient)).rejects.toThrow('exact USDC trustline');
   });
-  it('rejects fees above the safety ceiling', async () => { setup(); vi.mocked(Horizon.Server.prototype.feeStats).mockResolvedValue({ last_ledger_base_fee: '100', fee_charged: { p95: '100001' } } as never); await expect(prepareTestPayment(source, recipient)).rejects.toThrow('safety limit'); });
+  it('caps the suggested fee at 0.0100000 XLM', async () => { setup(); vi.mocked(Horizon.Server.prototype.feeStats).mockResolvedValue({ last_ledger_base_fee: '100', fee_charged: { p95: '100001' } } as never); expect((await prepareTestPayment(source, recipient)).feeXlm).toBe('0.0100000'); });
+  it('rejects network base fees above the ceiling', async () => { setup(); vi.mocked(Horizon.Server.prototype.feeStats).mockResolvedValue({ last_ledger_base_fee: '100001', fee_charged: { p95: '100001' } } as never); await expect(prepareTestPayment(source, recipient)).rejects.toThrow('safety limit'); });
   it('rejects altered signed payment before any submission', async () => {
     setup(); const payment = await prepareTestPayment(source, recipient);
     const altered = new TransactionBuilder(new Account(source, '123'), { fee: '200', networkPassphrase: Networks.TESTNET }).addOperation(Operation.payment({ destination: recipient, asset: Asset.native(), amount: '1' })).setTimeout(180).build(); altered.sign(payer);

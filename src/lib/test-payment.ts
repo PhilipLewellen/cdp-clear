@@ -25,8 +25,10 @@ export async function prepareTestPayment(source: string, destination: string): P
   await verifyTestnetAsset(USDC_ASSET.issuer);
   const server = new Horizon.Server(STELLAR_CONFIG.horizonUrl);
   const [data, account, fees] = await Promise.all([loadWalletBalances(source, destination), server.loadAccount(source), server.feeStats()]);
-  const fee = [BigInt(fees.last_ledger_base_fee), BigInt(fees.fee_charged.p95)].reduce((a, b) => a > b ? a : b);
-  if (fee > 100_000n) throw new Error('Estimated fee exceeds the 0.0100000 XLM safety limit. Retry when fees fall.');
+  const base = BigInt(fees.last_ledger_base_fee);
+  if (base > 100_000n) throw new Error('Network base fee exceeds the 0.0100000 XLM safety limit. Retry when fees fall.');
+  const estimate = [base, BigInt(fees.fee_charged.p95)].reduce((a, b) => a > b ? a : b);
+  const fee = estimate > 100_000n ? 100_000n : estimate;
   data.feeXlm = decimal(fee);
   const reasons = fundingChecks(data, 1, source, destination, USDC_ASSET.issuer);
   if (reasons.length) throw new Error(reasons.join(' '));
