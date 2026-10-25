@@ -4,12 +4,15 @@ export interface Obligation {
   receiver: Party; // the party that receives cash; the other party pays
   amount: number;
   currency: string;
+  settlementDate?: string;
+  lifecycle?: 'Captured' | 'Validated';
+  eligible?: boolean;
 }
 
 export const SAMPLE_OBLIGATIONS: Obligation[] = [
-  { id: "T-001", receiver: "A", amount: 2000, currency: "USD" },
-  { id: "T-002", receiver: "B", amount: 800, currency: "USD" },
-  { id: "T-003", receiver: "A", amount: 300, currency: "USD" },
+  { id: "T-001", receiver: "A", amount: 2000, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
+  { id: "T-002", receiver: "B", amount: 800, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
+  { id: "T-003", receiver: "A", amount: 300, currency: "USD", settlementDate: '2026-10-26', lifecycle: 'Validated', eligible: true },
 ];
 
 export interface NetResult {
@@ -32,6 +35,10 @@ export function netObligations(obs: Obligation[]): NetResult {
   const base = { currency, gross: 0, aReceives: 0, bReceives: 0, net: 0, payer: null, payee: null, reduction: 0 };
   if (currencies.size > 1)
     return { ...base, ok: false, error: "Mixed currencies cannot be netted bilaterally." };
+  if (new Set(obs.map(o => o.settlementDate ?? '2026-10-26')).size > 1)
+    return { ...base, ok: false, error: 'Matching settlement dates are required within the netting set.' };
+  if (obs.some(o => o.eligible === false))
+    return { ...base, ok: false, error: 'All obligations in this netting set must be eligible.' };
   if (obs.some((o) => !Number.isFinite(o.amount) || o.amount < 0))
     return { ...base, ok: false, error: "Amounts must be non-negative numbers." };
   const cents = (n: number) => Math.round(n * 100);
