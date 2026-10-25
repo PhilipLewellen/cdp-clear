@@ -50,6 +50,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (s?.instruction) updateInstruction(LIFECYCLE.includes(s.instruction.status) && s.instruction.obligationSnapshot ? s.instruction : { ...s.instruction, status: 'Exception', verifiedNote: 'Legacy instruction requires fresh issuer validation and independent network verification.' });
       if (Array.isArray(s?.history)) setHistory(s.history);
       if (Array.isArray(s?.activity)) setActivity(s.activity);
+      if (s?.scaledInstruction?.id && s.scaledInstruction.snapshot && typeof s.scaledInstruction.usdcAmount === 'string') updateScaledInstruction({ payerAddress: '', recipient: '', txHash: '', ...s.scaledInstruction });
       if (s?.testSettlement?.id === TEST_RECORD_ID && Array.isArray(s.testSettlement.audit)) updateTestSettlement(s.testSettlement);
       else {
         const saved = savedPayment();
@@ -59,14 +60,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify({ trades, instruction, history, activity, testSettlement }));
-  }, [trades, instruction, history, activity, testSettlement, loaded]);
+    if (loaded) localStorage.setItem(KEY, JSON.stringify({ trades, instruction, history, activity, testSettlement, scaledInstruction }));
+  }, [trades, instruction, history, activity, testSettlement, scaledInstruction, loaded]);
   const reset = () => {
     updateTrades(SAMPLE_OBLIGATIONS);
     updateInstruction(null);
     setHistory([]);
+    updateScaledInstruction(null);
     setActivity(previous => previous.filter(event => event.reference === TEST_RECORD_ID));
     recordActivity({ category: 'Demo operation', action: 'Demo reset', reference: 'NS-AB-001', detail: 'Three valid eligible sample obligations restored' });
   };
-  return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity, testSettlement, setTestSettlement }}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={{ trades, setTrades, instruction, history, setInstruction, reset, activity, recordActivity, testSettlement, setTestSettlement, scaledInstruction, setScaledInstruction }}>{children}</StoreContext.Provider>;
 }
