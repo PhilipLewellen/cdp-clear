@@ -22,8 +22,9 @@ export const Route = createFileRoute("/netting")({
 function Netting() {
   const { trades, recordActivity } = useStore();
   const r = netObligations(trades);
-  const affected = trades.filter(t => t.eligible === false || t.currency.trim().toUpperCase() !== trades[0]?.currency.trim().toUpperCase() || t.settlementDate !== trades[0]?.settlementDate || !Number.isFinite(t.amount) || t.amount < 0);
+  const affected = trades.filter(t => !netObligations([t]).ok || t.currency.trim().toUpperCase() !== trades[0]?.currency.trim().toUpperCase() || t.settlementDate !== trades[0]?.settlementDate || !Number.isFinite(t.amount) || t.amount < 0);
   return <Shell title="Netting" intro="NS-AB-001 / CP-A–CP-B / Bilateral payment offset">
+    {!trades.length && <section className="border-y border-border p-4"><p className="mb-3">No forwards to net.</p><Button asChild variant="outline"><Link to="/">Add or restore sample forwards</Link></Button></section>}
     {!r.ok ? <section className="border-l-2 border-destructive bg-card p-4"><p role="alert" className="text-sm text-destructive">{r.error}</p><div className="mt-3 flex flex-wrap gap-3">{(affected.length ? affected : trades.slice(0,1)).map(t => <Button key={t.id} asChild variant="outline"><Link to="/" hash={t.id}>Review {t.id}</Link></Button>)}</div></section> : <>
       <section className="flex flex-wrap items-center justify-between gap-6 rounded border border-border bg-card p-6">
         <div><div className="mb-2 text-xs text-muted-foreground">Net Obligation</div><div className="flex flex-wrap items-baseline gap-x-6 gap-y-2"><span className="font-mono text-3xl text-primary">{fmt(r.net,r.currency)}</span><span className="font-mono text-sm">{r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment required'}</span></div></div>
