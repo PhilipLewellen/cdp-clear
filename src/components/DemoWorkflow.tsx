@@ -8,13 +8,13 @@ import { H100MarketPanel } from '@/components/H100MarketPanel';
 import { ScaledSettlementCalc, ScaledSettlementPayment, ScaledSettlementVerify } from '@/components/ScaledSettlement';
 import { useStore } from '@/lib/use-store';
 import { deriveObligation, fmt, netObligations } from '@/lib/netting';
-import { marketScenario } from '@/lib/h100';
+import { isStale, marketScenario } from '@/lib/h100';
 
 const labels = ['Calculate', 'Net', 'Settle', 'Verify'] as const;
 const purpose = [
   'Indicative cash exposures use the latest available published H100 rental reference, not an authorised contractual settlement fixing.',
   'Indicative bilateral netting offsets opposing market-valued exposures; settlement remains a separately confirmed illustrative calculation.',
-  'Settle the scaled net obligation with a real USDC payment on Stellar Testnet — nothing is sent without your explicit review and approval.',
+  'Select a smaller illustrative Testnet portfolio, generate its instruction, then review and authorise payment through Freighter.',
   'Independently verify the confirmed blockchain payment against the exact settlement instruction.',
 ] as const;
 
@@ -33,7 +33,8 @@ export function DemoWorkflow() {
   const direction = r.payer ? `CP-${r.payer} → CP-${r.payee}` : 'Fully offset · no payment needed';
   const reconciled = scaledInstruction?.status === 'Reconciled';
   const changeStep = (next: number) => { setStep(next); requestAnimationFrame(() => heading.current?.focus()); };
-  const nextLabel = ['Review Netting', scaledInstruction ? 'Continue to Settlement' : 'Next: Settle', 'Next: Verify'][step];
+  const grossCount = shown.filter(t => t.amount > 0).length;
+  const nextLabel = ['Continue to Netting', 'Continue to Settlement', 'Next: Verify'][step];
   return <Shell title="From derivatives exposure to verified settlement." intro="Calculate GPU compute derivative obligations, reduce payments through bilateral netting, and settle in USDC on Stellar.">
     <ol className="demo-steps" aria-label="Demo steps">{labels.map((label, index) => <li key={label}><Button variant={index === step ? 'default' : 'ghost'} aria-current={index === step ? 'step' : undefined} data-complete={index < step || undefined} onClick={() => changeStep(index)}>{index < step ? <Check className="size-3.5 text-success" aria-hidden="true" /> : <span className="font-mono">{index + 1}.</span>}{label}</Button></li>)}</ol>
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
@@ -62,11 +63,15 @@ export function DemoWorkflow() {
     </section>
 
     <section hidden={step !== 1} aria-label="Net payment flows" className="demo-panel">
-      <h3 className="mb-3 text-sm font-semibold">Indicative Market Valuation</h3>
-      <H100MarketPanel market={market} />
+      <h3 className="mb-3 text-sm font-semibold">Indicative Bilateral Netting</h3>
+      <p className="mb-4 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <span>H100 reference: {market.observation ? `$${market.observation.value.toFixed(4)} / GPU-hour · Compute Screener` : market.loading ? 'Loading…' : 'Unavailable'}</span>
+        {market.observation && <span>{market.observation.final ? 'Final' : 'Provisional'}{market.cached ? ' · Cached / last retrieved' : ''}{isStale(market.observation) ? ' · Older than 24 hours' : ''}{market.loading ? ' · Refreshing' : ''}{market.error ? ' · Latest retrieval unavailable' : ''}</span>}
+      </p>
       {!r.ok ? <p role="status" className="text-destructive">{r.error}</p> : <>
-        <div className="demo-net-flow"><div><p className="text-xs text-muted-foreground">{trades.length} gross cash obligations</p><p className="mt-2 font-mono text-3xl">{fmt(r.gross, r.currency)}</p></div><ArrowRight className="size-6 text-muted-foreground" aria-hidden="true"/><div><p className="text-xs text-muted-foreground">{r.net > 0 ? 'One net obligation' : 'No net obligation'}</p><p className="mt-2 font-mono text-3xl text-primary">{fmt(r.net, r.currency)}</p><p className="mt-2 font-mono">{direction}</p></div></div>
-        <p className="mt-2 text-sm">{trades.length} payments reduced to {r.net > 0 ? 'one' : 'zero'} · {direction}</p>
+        <div className="demo-net-flow"><div><p className="text-xs text-muted-foreground">{grossCount} gross cash obligations</p><p className="mt-2 font-mono text-3xl">{fmt(r.gross, r.currency)}</p></div><div className="flex flex-col items-center gap-2 text-xs text-muted-foreground"><span>Bilateral netting</span><ArrowRight className="size-6" aria-hidden="true"/></div><div><p className="text-xs text-muted-foreground">{r.net > 0 ? 'One net obligation' : 'No net obligation'}</p><p className="mt-2 font-mono text-3xl text-primary">{fmt(r.net, r.currency)}</p><p className="mt-2 font-mono">{direction}</p></div></div>
+        <p className="mt-2 text-sm">{grossCount} gross obligations → {r.net > 0 ? 'one net obligation' : 'zero net obligations'}</p>
+        <p className="mt-3 text-xs text-success">Eligibility checks passed · matching currency and settlement cycle · all obligations eligible</p>
         <figure className="mt-5 rounded border border-border bg-card p-4" aria-label="Opposing cash flows offset">
           <figcaption className="mb-3 text-xs text-muted-foreground">Opposing cash flows offset</figcaption>
           <div className="grid gap-3 text-xs">
@@ -78,14 +83,11 @@ export function DemoWorkflow() {
         <details className="mt-5"><summary>Advanced Details · calculation and eligibility</summary><p className="mt-3 font-mono">{fmt(r.aReceives, r.currency)} payable to CP-A − {fmt(r.bReceives, r.currency)} payable to CP-B</p><p className="mt-3 text-xs text-muted-foreground">Assumes the same counterparties, currency, settlement cycle, eligible obligations and an enforceable netting agreement. No novation or CCP guarantee.</p></details>
 
       </>}
-      <details className="mt-5 border-t border-border pt-4"><summary>Original Illustrative Example · settlement calculation</summary>
-        <p className="mt-3 text-xs text-muted-foreground">Settlement uses the selected booked simulated fixings, not the changing H100 reference. Confirm this separate calculation before generating an immutable instruction.</p>
-        <ScaledSettlementCalc requireConfirmation />
-      </details>
       <Button asChild variant="outline" className="mt-5"><Link to="/netting">Full netting analysis</Link></Button>
     </section>
 
     <section hidden={step !== 2} aria-label="Settle scaled obligation" className="demo-panel">
+      <ScaledSettlementCalc requireConfirmation />
       <ScaledSettlementPayment onViewVerified={() => changeStep(3)} />
     </section>
 

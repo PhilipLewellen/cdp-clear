@@ -1,3 +1,10 @@
+# Final workflow consolidation
+- [x] Keep full market details in Calculate and only the shared valuation basis in Net.
+- [x] Move confirmed scaling/instruction creation to Settle; preserve records and mounted payment review.
+- [x] Verify the four-step flow, shared price retrieval, eligibility and locked instruction safeguards.
+
+Validation: 196 tests pass; build OK. Browser confirmed one H100 retrieval per page load with none on step navigation, full-precision 1041.65 gross / 812.01 net, explicit confirmation and generation in Settle, and unchanged 1.5000000 USDC instruction/fingerprint after scale change, Back/Next and reload. No runtime errors or 800px overflow. No payment or signature requested; live Freighter execution remains an external manual check.
+
 # Market-driven valuation UX
 - [x] Automatically load full-precision H100 market valuation across Calculate and Net with truthful feed states.
 - [x] Collapse original example, remove scenario controls and duplicate comparisons, confirm booked settlement calculation explicitly.

@@ -31,7 +31,7 @@ function statusTone(status: ScaledInstruction['status']) {
   return 'text-warning';
 }
 
-/** Step 2 — Settlement Scale selector, scaled calculation and instruction generation. */
+/** Step 3 — Settlement Scale selector, scaled calculation and instruction generation. */
 export function ScaledSettlementCalc({ requireConfirmation = false }: { requireConfirmation?: boolean }) {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const [scale, setScale] = useState<SettlementScale>(DEFAULT_SCALE);
@@ -74,7 +74,7 @@ export function ScaledSettlementCalc({ requireConfirmation = false }: { requireC
         <Button variant="outline" className="mt-3" disabled={!ready || generating || confirmedCalculation === calculationKey} onClick={() => setConfirmedCalculation(calculationKey)}>{confirmedCalculation === calculationKey ? 'Illustrative calculation confirmed' : 'Confirm Illustrative Settlement Calculation'}</Button>
       </div>}
       {scaledInstruction && snapshotUnchanged(scaledInstruction, trades)
-        ? <p className="mt-4 text-xs">Instruction <span className="font-mono">{scaledInstruction.id}</span> already exists · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span> — changing the scale never overwrites an existing instruction. Continue to Settle.</p>
+        ? <p className="mt-4 text-xs">Instruction <span className="font-mono">{scaledInstruction.id}</span> already exists · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span> — changing the scale never overwrites an existing instruction. Payment below remains tied to its saved scale and amount.</p>
         : <Button className="mt-4" disabled={!ready || generating || (requireConfirmation && confirmedCalculation !== calculationKey)} onClick={generate}>{generating ? 'Saving financial snapshot…' : scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
       {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
       {scaledInstruction && !snapshotUnchanged(scaledInstruction, trades) && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span><span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span></p>}
@@ -117,7 +117,7 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
   // Recovery: after reload, look up a known submitted hash read-only once. Never re-signs or re-sends.
   useEffect(() => { if (pending && instruction && !autoChecked.current) { autoChecked.current = true; void check(); } });
 
-  if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement payment"><div className="module-heading"><h2>Scaled settlement payment</h2><span>Stellar Testnet</span></div><p className="text-sm text-muted-foreground">Generate a scaled settlement instruction in step 2 first. No payment can start without one.</p></section>;
+  if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement payment"><div className="module-heading"><h2>Scaled settlement payment</h2><span>Stellar Testnet</span></div><p className="text-sm text-muted-foreground">Select and confirm the illustrative calculation above, then generate its instruction. No payment can start without one.</p></section>;
 
   const remember = (payment: PreparedScaledPayment, hash: string, signedXdr: string) => {
     const record: PendingScaled = { instructionId: instruction.id, hash, signedXdr, payment: { source: payment.source, destination: payment.destination, amount: payment.amount, feeXlm: payment.feeXlm, expiresAt: payment.expiresAt } };
@@ -231,7 +231,7 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
       <dt className="text-muted-foreground">Wallet readiness</dt><dd>{wallet.status === 'connected' ? <>Connected · <span className="break-all font-mono">{wallet.address}</span></> : wallet.status === 'loading' ? 'Connecting…' : 'Not connected — connect Freighter on Stellar Testnet'}</dd>
       <dt className="text-muted-foreground">Status</dt><dd className={statusTone(instruction.status)}>{instruction.status}</dd>
     </dl>
-    {!unchanged && <p role="alert" className="mt-4 text-xs text-warning">The portfolio changed after this instruction was generated. Payment is blocked; generate a new instruction in step 2.</p>}
+    {!unchanged && <p role="alert" className="mt-4 text-xs text-warning">The portfolio changed after this instruction was generated. Payment is blocked; confirm the updated calculation and generate a new instruction above.</p>}
     {instruction.status === 'Instruction Created' && unchanged && !pending && <>
       <label className="mt-4 block text-xs text-muted-foreground">Recipient public address (CP-{instruction.beneficiary} wallet)<input aria-label="Scaled settlement recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
       {wallet.status === 'connected' && <section aria-label="Settlement readiness" className="mt-4 rounded border border-border bg-card p-3">
@@ -274,7 +274,7 @@ export function ScaledSettlementVerify() {
   const instruction = scaledInstruction;
   if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement verification">
     <div className="module-heading"><h2>Scaled settlement verification</h2><span>Horizon</span></div>
-    <p className="text-sm text-muted-foreground">No scaled settlement instruction exists yet. Generate one in step 2.</p>
+    <p className="text-sm text-muted-foreground">No scaled settlement instruction exists yet. Generate one in step 3 — Settle.</p>
     <div className="mt-6 border-t border-border pt-4">
       <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
       <p className="mt-2 text-xs text-muted-foreground">Isolated demonstration: reconcile a real confirmed Testnet payment against a deliberately incorrect hypothetical instruction. No records change and no payment is made.</p>

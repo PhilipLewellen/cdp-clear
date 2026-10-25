@@ -62,4 +62,14 @@ describe('Automatic indicative valuation', () => {
     await waitFor(() => expect(JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').scaledInstruction?.usdcAmount).toBe('15.0000000'));
     expect(JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').trades).toEqual(SAMPLE_OBLIGATIONS);
   });
+  it('retains the generated 1.5000000 USDC instruction and fingerprint when its scale selector changes', async () => {
+    render(<StoreProvider><ScaledSettlementCalc requireConfirmation /></StoreProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Illustrative Settlement Calculation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate Settlement Instruction' }));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').scaledInstruction?.usdcAmount).toBe('1.5000000'));
+    const original = JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').scaledInstruction;
+    expect(original.financialFingerprint).toMatch(/^[a-f0-9]{64}$/);
+    fireEvent.click(screen.getByRole('radio', { name: /One-hundredth/ }));
+    expect(JSON.parse(localStorage.getItem('cdp-clear-v1') ?? '{}').scaledInstruction).toEqual(original);
+  });
 });
