@@ -11,7 +11,7 @@
 
 - Demo state (trades, instruction) lives in a React context persisted to localStorage (`src/lib/store.tsx`); no backend is needed for the demo.
 - Keep component modules component-only; the demo context and hook live outside the provider module and shared class constants outside Shell so Fast Refresh preserves context identity and avoids importer invalidation.
-- Wallet connection uses Freighter via src/hooks/use-freighter.ts (dynamic import, Testnet-only guard in src/lib/stellar-config.ts, never persisted); browser code never handles private keys, and payment submission is not implemented until a later phase.
+- Wallet connection uses dynamically imported Freighter with Testnet-only checks before/after signing; browser code never handles user private keys or persists wallet access.
 - WalletProvider shares a nonpersisted connection across workflow pages; context stays outside component modules to preserve Fast Refresh identity. Read-only balance checks dynamically load Horizon SDK in the browser, recheck Freighter network/account, discard stale results and use integer stroops for exact asset/liability/reserve calculations; no execution or lifecycle changes occur from funding checks.
 - Financial obligations and netting are shared in src/lib/netting.ts; instruction lifecycle and snapshot reconciliation live in src/lib/settlement.ts so all pages use the same rules.
 - GPU-forward economics derive cash amounts and direction in the shared financial helper; legacy saved cash rows are upgraded without replacing their saved cash values, dates or eligibility.
@@ -22,3 +22,5 @@
 - Verify the fixed Horizon testnet network and exact USDC issuer asset before instruction validation and payment reconciliation; on-chain matching does not attest real-world issuer authenticity.
 - Shared workstation surfaces, compact table/control styling and responsive settlement module layout belong in src/styles.css; pages consume these styles and semantic tokens to keep all three workflow stages consistent without altering financial helpers.
 - Activity is a browser-local event register persisted with demo state, separate from instruction lifecycle evidence; record operator actions as demo operations and network events only from independently verified instruction evidence to avoid fabricated payment claims.
+- Separate Testnet payment logic lives in src/lib/test-payment.ts, isolated from simulated instructions; validate unchanged signed transaction hash and payer signature, refresh prerequisites, and confirm matching Horizon evidence before success.
+- Keep unresolved test-payment hashes and public addresses in sessionStorage, not signed XDR; block resubmission and offer read-only status lookup after ambiguous submission to avoid accidental double payment.

@@ -1,3 +1,11 @@
+# Phase 3 separate Testnet payment
+- [x] Add fixed 1.0000000 USDC payment review, fresh prerequisites and Freighter signing.
+- [x] Implement exact signed Testnet submission, independent success verification and balance refresh without reconciling obligations.
+- [x] Test safeguards and browser states; document real-extension verification limitations.
+- [ ] Verify real Freighter approval and a successful live payment (requires the user's funded Testnet wallet/extension).
+
+Phase 3 validation: 87 tests pass; latest build OK. Browser prepared a real classic SDK USDC transaction using live Horizon accounts, issuer and fee data, with emulated public wallet access only. Signature rejection showed no success/hash/explorer link and no payment was signed or submitted. Valid signed-XDR submission, matching confirmation and refresh are fixture-tested. Fees use current estimates capped at 0.01 XLM; network base fees above the cap fail closed. Separate payment never changes simulated obligations, instruction lifecycle or reconciliation; Phase 4 is not implemented.
+
 # Phase 2 wallet balances and asset validation
 - [x] Share the live Freighter connection across the header and Settlement.
 - [x] Query exact-issuer Testnet balances, reserves, liabilities and beneficiary authorisation.

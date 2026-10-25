@@ -1,6 +1,6 @@
 # CDP Clear — HackMeridian demo
 
-Bilateral Payment Netting & USDC Cash-Leg Settlement for Tokenised Compute Derivatives. **Simulation / Testnet Verification only. No real funds. No secret keys requested or used.** CDP Clear is not a central counterparty, regulated clearinghouse, live derivatives exchange or production settlement system.
+Bilateral Payment Netting & USDC Cash-Leg Settlement for Tokenised Compute Derivatives. **Simulated derivatives / Stellar Testnet only. No real funds. No secret keys requested or used by CDP Clear.** Freighter signs locally. CDP Clear is not a central counterparty, regulated clearinghouse, live derivatives exchange or production settlement system.
 
 ## GPU-forward economics
 T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A payoff. T-002: 400 × ($2 − $4) = −$800. T-003: 300 × ($4 − $3) = $300. Expand each trade to edit GPU quantity, strike, simulated fixing or long counterparty. Cash amount is absolute payoff; cash direction follows its sign. No conflicting manual cash edits. Saved legacy cash rows are upgraded preserving cash values, dates and eligibility; any implied fixing remains simulated.
@@ -9,7 +9,7 @@ T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A p
 0. **Operations Overview** (`/overview`) – state-driven totals, direction, status and settlement next action; existing URLs are preserved.
 1. **Trade Capture & Lifecycle** (`/`) – CP-B pays CP-A USD 2,000; CP-A pays CP-B USD 800; CP-B pays CP-A USD 300. These are illustrative valuation-derived cash obligations, not full derivative notionals. Sample settlement date is October 26, 2026, an illustrative input; lifecycle and eligibility metadata are visible.
 2. **Bilateral Payment Netting** (`/netting`) – gross payable CP-B USD 2,300 minus gross payable CP-A USD 800 = **NSO USD 1,500 payable CP-B to CP-A**. Aggregate gross flows USD 3,100; reduction USD 1,600 (51.6%); three gross payments compressed to one. Requires same currency, matching settlement dates and eligible obligations; contractual permission under an enforceable netting agreement is assumed. No novation, multilateral netting, margin optimisation or CCP risk guarantee.
-3. **Cash-Leg Settlement & Reconciliation** (`/settlement`) – browser-local instruction register, obligation snapshot, public wallets, USDC issuer validation, external authorisation queue, independent network confirmation and explicit reconciliation. The app **does not sign or send payments**.
+3. **Cash-Leg Settlement & Reconciliation** (`/settlement`) – browser-local instruction register, obligation snapshot, public wallets, USDC issuer validation, external authorisation queue, independent network confirmation and explicit reconciliation. A separate Phase 3 action signs through Freighter and sends exactly **1.0000000 Testnet USDC**, never the simulated net obligation.
 
 4. **Activity** (`/activity`) – actual local edits, validation, netting calculations, instruction changes and verification requests; linked references, lifecycle and evidence. No fabricated history.
 
@@ -23,7 +23,7 @@ T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A p
 
 ## Implemented vs not
 - Implemented: GPU-forward payoff derivation, state-driven Overview, local audit events, shared netting maths, eligibility/date validation, lifecycle metadata, instruction register, issuer/network validation, read-only Horizon confirmation and field-level reconciliation.
-- Not implemented: external payment authorisation, payment sending, wallet signing, mainnet, live derivative valuation, real FX/market prices, persistence beyond browser localStorage or production-grade multi-operator controls.
+- Not implemented: app execution of the simulated net obligation, Phase 4 integration/reconciliation of the separate test payment, mainnet, live derivative valuation, real FX/market prices or production-grade multi-operator controls.
 
 ## Phase 2 — wallet and settlement asset
 Connect Freighter on **Stellar Testnet**, open Settlement and enter the beneficiary public address in **Wallet & Settlement Asset**. Use the connected payer address for a new draft if appropriate; existing instructions are never silently rewritten. The panel uses the SDK's `Horizon.Server("https://horizon-testnet.stellar.org").loadAccount()` for actual account data and matches both code **USDC** and exact configured issuer. It rechecks the wallet network/account, refreshes every 30 seconds/on focus, and supports manual refresh. No balances are persisted or fabricated.
@@ -36,4 +36,13 @@ Issuer documentation verified on 2026-10-25: https://developers.circle.com/stabl
 `bunx vitest run`
 
 ## Validation and external requirements
-40 tests cover economics, dates/eligibility, duplicate hashes and obligation snapshots, persistence and truthful activity. Browser checks exercised quantity/strike/fixing/long-direction changes, saved recalculation, live issuer validation and missing-hash exceptions. Successful payment matching is covered by controlled fixtures; no genuine successful payment was provided in this update. A funded testnet wallet or Stellar mentor is required to create a real testnet payment, obtain test USDC and sign externally. No Freighter signing integration was added.
+Tests cover economics, dates/eligibility, duplicate hashes and obligation snapshots, persistence and truthful activity. Successful payment matching and signing/submission safeguards are tested with controlled fixtures; this does not claim a real Freighter approval or successful live payment. A funded Testnet Freighter wallet is required for an end-to-end Phase 3 payment; a Stellar mentor may help obtain test USDC/trustlines.
+
+## Phase 3 — separate 1 USDC test settlement
+1. Connect Freighter on Testnet. Fund the payer with at least 1 spendable USDC of the configured Circle-documented Testnet issuer and sufficient XLM after reserves/liabilities. Use a single-signature account. The recipient must exist, have the same authorised USDC trustline and at least 1 USDC receiving capacity.
+2. In **Separate 1 USDC test settlement**, enter the recipient's public G-address (blank by default) and select **Send Test Settlement**. Review sender, recipient, exact issuer, fixed amount, network and fee. Current p95/base fees are used, with a 0.01 XLM ceiling and a 180-second transaction timeout.
+3. Select **Confirm & sign in Freighter**, then approve the extension's signature prompt. Funds/network are checked again before signing; the unchanged transaction body and valid payer signature are checked before Horizon submission.
+4. A hash and Stellar Expert link appear only after independent Horizon verification of a successful matching 1 USDC payment. Live balances refresh. The $1,500 simulated NSO and all instruction lifecycle/reconciliation records are untouched.
+5. Rejection or pre-submission errors never show success. Ambiguous submission blocks another payment and offers **Check payment status**; unresolved public hash/addresses survive reload in the same tab, but no keys or signed XDR are stored. Do not resend from another tab/device when outcome is uncertain. Failures with confirmed network result may require manual review before another attempt.
+
+Phase 4 is not implemented. Real extension approval/submission cannot be verified in the sandbox; no genuine payment is claimed without that user-authorised flow.
