@@ -27,7 +27,7 @@ function Overview() {
   const direction = (payer: string | null, payee: string | null) => payer ? `CP-${payer} → CP-${payee}` : 'Fully offset · no payment required';
   const delta = signedNet(stress) - signedNet(r);
   return <Shell title="Risk & Settlement Overview" intro="NS-AB-001 / GPU compute forwards / Browser-local booked state">
-    {!trades.length ? <section className="border-y border-border p-4"><p className="mb-3">No GPU forwards in this netting set.</p><Button variant="outline" onClick={reset}>Restore sample forwards</Button></section> : !r.ok ? <section className="border-y border-border p-4"><p role="alert" className="mb-3 text-destructive">{r.error}</p><Button asChild variant="outline"><Link to="/">Review obligations</Link></Button></section> : <>
+    {!trades.length ? <section className="border-y border-border p-4"><p className="mb-3">No GPU forwards in this netting set.</p><Button variant="outline" onClick={reset}>Restore sample forwards</Button></section> : !r.ok ? <section className="border-y border-border p-4"><p role="alert" className="mb-3 text-destructive">{r.error}</p><Button asChild variant="outline"><Link to="/obligations">Review obligations</Link></Button></section> : <>
       <div className="settlement-modules">
         <section className="settlement-module" aria-label="Cash exposure summary">
           <div className="module-heading"><h2>Cash exposure summary</h2><span>BOOKED</span></div>

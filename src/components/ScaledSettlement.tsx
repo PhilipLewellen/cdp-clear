@@ -8,7 +8,7 @@ import { fmt } from '@/lib/netting';
 import { inputCls } from '@/lib/ui-classes';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
 import { testPaymentSession } from '@/lib/test-payment-session';
-import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaledNet, snapshotUnchanged, usdcAmount, verifyScaledInstruction, type ScaledInstruction, type SettlementScale } from '@/lib/scaled-settlement';
+import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, verifyScaledInstruction, type ScaledInstruction, type SettlementScale } from '@/lib/scaled-settlement';
 import { prepareScaledPayment, submitScaledPayment, readScaledPayment, paymentError, type PreparedScaledPayment, type ConfirmedScaledPayment } from '@/lib/scaled-payment';
 
 const PENDING_KEY = 'cdp-clear-scaled-payment-pending';
@@ -49,7 +49,12 @@ export function ScaledSettlementCalc() {
     </div>
     {!scaled.ok ? <p role="alert" className="text-destructive">{scaled.error}</p> : <>
       <div className="demo-net-flow"><div><p className="text-xs text-muted-foreground">Original portfolio · gross / net</p><p className="mt-2 font-mono text-xl">{fmt(scaled.gross * scale.divisor, scaled.currency)} / {fmt(scaled.net * scale.divisor, scaled.currency)}</p></div><div><p className="text-xs text-muted-foreground">Scaled demonstration · gross / net</p><p className="mt-2 font-mono text-xl text-primary">{fmt(scaled.gross, scaled.currency)} / {fmt(scaled.net, scaled.currency)}</p><p className="mt-2 font-mono text-sm">{direction}</p></div></div>
-      <p className="mt-4 border-y border-border py-3 font-mono text-sm">{originalOk.ok ? fmt(originalOk.net, originalOk.currency) : '—'} ÷ {scale.divisor.toLocaleString('en-US')} = {fmt(scaled.net, scaled.currency)} → {scaled.net > 0 ? usdcAmount(scaled.net) : '0.0000000'} testnet USDC</p>
+      <dl className="mt-4 grid grid-cols-[180px_minmax(0,1fr)] gap-2 border-y border-border py-3 text-sm">
+        <dt className="text-muted-foreground">Original net obligation</dt><dd className="font-mono">{originalOk.ok ? fmt(originalOk.net, originalOk.currency) : '—'}</dd>
+        <dt className="text-muted-foreground">Demo portfolio scale</dt><dd className="font-mono">{scale.ratio}</dd>
+        <dt className="text-muted-foreground">Scaled net obligation</dt><dd className="font-mono">{fmt(scaled.net, scaled.currency)}</dd>
+        <dt className="text-muted-foreground">Expected payment</dt><dd className="font-mono text-primary">{scaled.net > 0 ? usdcAmount(scaled.net) : '0.0000000'} testnet USDC</dd>
+      </dl>
       <p className="mt-3 text-xs text-muted-foreground">The {scaled.net > 0 ? usdcAmount(scaled.net) : '0'} USDC payment represents the scaled portfolio only; the original {originalOk.ok ? fmt(originalOk.net, originalOk.currency) : ''} obligation is not settled by this transfer. Testnet USDC has no real monetary value.</p>
       {scaled.net <= 0 && <p className="mt-3 text-xs text-warning">Net obligation is zero at this scale; no payment is required.</p>}
       <Button className="mt-4" disabled={!ready} onClick={generate}>Generate Settlement Instruction</Button>
@@ -139,11 +144,14 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
   };
 
   const unchanged = snapshotUnchanged(instruction, trades);
+  const lifecycle = settlementLifecycle(instruction, Boolean(prepared) || phase.startsWith('Awaiting'));
   return <section className="settlement-section" aria-label="Scaled settlement payment">
     <div className="module-heading"><h2>Scaled settlement payment</h2><span>{instruction.id} · Stellar Testnet</span></div>
     <p className="mb-4 text-xs text-warning">{instruction.usdcAmount} USDC test tokens settle the scaled portfolio only. The original {fmt(instruction.originalNet, 'USD')} obligation is not discharged.</p>
+    <p className="mb-4 text-sm">Settlement status <span className={`ml-2 font-medium ${statusTone(instruction.status)}`}>{lifecycle}</span></p>
     <dl className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Instruction ID</dt><dd className="font-mono">{instruction.id}</dd>
+      <dt className="text-muted-foreground">Source netting result</dt><dd className="font-mono">NS-AB-001 · {fmt(instruction.originalGross, 'USD')} gross → {fmt(instruction.originalNet, 'USD')} net · CP-{instruction.payer} pays CP-{instruction.beneficiary}</dd>
       <dt className="text-muted-foreground">Original net obligation</dt><dd className="font-mono">{fmt(instruction.originalNet, 'USD')}</dd>
       <dt className="text-muted-foreground">Settlement scale</dt><dd className="font-mono">1:{instruction.divisor.toLocaleString('en-US')}</dd>
       <dt className="text-muted-foreground">Scaled payment</dt><dd className="font-mono text-primary">{instruction.usdcAmount} USDC</dd>
@@ -152,6 +160,7 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
       <dt className="text-muted-foreground">Asset / issuer</dt><dd className="break-all font-mono">{instruction.assetCode} · {instruction.assetIssuer}</dd>
       <dt className="text-muted-foreground">Network</dt><dd>{instruction.network}</dd>
       <dt className="text-muted-foreground">Created</dt><dd className="font-mono">{instruction.createdAt}</dd>
+      <dt className="text-muted-foreground">Wallet readiness</dt><dd>{wallet.status === 'connected' ? <>Connected · <span className="break-all font-mono">{wallet.address}</span></> : wallet.status === 'loading' ? 'Connecting…' : 'Not connected — connect Freighter on Stellar Testnet'}</dd>
       <dt className="text-muted-foreground">Status</dt><dd className={statusTone(instruction.status)}>{instruction.status}</dd>
     </dl>
     {!unchanged && <p role="alert" className="mt-4 text-xs text-warning">The portfolio changed after this instruction was generated. Payment is blocked; generate a new instruction in step 2.</p>}

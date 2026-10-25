@@ -122,7 +122,7 @@ function Settlement() {
         <p className="mt-4 text-xs text-muted-foreground">Illustrative 1:1 assumption: 1 {currency} = 1 testnet USDC. No real funds.</p>
         {!r.ok && <p role="alert" className="mt-3 text-xs text-destructive">{r.error}</p>}
         {alreadySettled && <p className="mt-3 text-xs text-success">This obligation snapshot is already Reconciled. A second instruction is blocked.</p>}
-        {!trades.length && <Button asChild variant="outline" className="mt-3"><Link to="/">Add or restore GPU forwards</Link></Button>}
+        {!trades.length && <Button asChild variant="outline" className="mt-3"><Link to="/obligations">Add or restore GPU forwards</Link></Button>}
         {r.currency !== 'USD' && <p className="mt-3 text-xs text-warning">USDC proposal requires contractual USD obligations; no currency conversion is implemented.</p>}
         {r.ok && r.net === 0 && <p className="mt-3 text-xs text-muted-foreground">Zero NSO — no cash-leg instruction required.</p>}
         {instruction && !unchanged && <p role="alert" className="mt-3 text-xs text-destructive">Netting set changed. Discard this instruction and create a new one before reconciliation.</p>}

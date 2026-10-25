@@ -41,7 +41,7 @@ export function DemoWorkflow() {
   const reconciled = scaledInstruction?.status === 'Reconciled';
   const changeStep = (next: number) => { setStep(next); requestAnimationFrame(() => heading.current?.focus()); };
   const nextLabel = ['Review Netting', scaledInstruction ? 'Continue to Settlement' : 'Next: Settle', 'Next: Verify'][step];
-  return <Shell title="Demo Workflow" intro="GPU compute forwards → bilateral payment netting → scaled Testnet settlement → on-chain verification">
+  return <Shell title="Demo Workflow" intro="Calculate, net and settle AI compute derivatives using USDC on Stellar.">
     <ol className="demo-steps" aria-label="Demo steps">{labels.map((label, index) => <li key={label}><Button variant={index === step ? 'default' : 'ghost'} aria-current={index === step ? 'step' : undefined} data-complete={index < step || undefined} onClick={() => changeStep(index)}>{index < step ? <Check className="size-3.5 text-success" aria-hidden="true" /> : <span className="font-mono">{index + 1}.</span>}{label}</Button></li>)}</ol>
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
       <h2 ref={heading} tabIndex={-1} className="demo-step-title">{step + 1}. {labels[step]}</h2>
@@ -76,7 +76,7 @@ export function DemoWorkflow() {
         <H100MarketPanel onScenario={setScenarioFixing} scenarioActive={scenarioMode} />
       </div>
       {!trades.length && <p className="mt-4 text-warning">No contracts saved. Add obligations in the original workspace; existing records have not been reset.</p>}
-      <Button asChild variant="outline" className="mt-5"><Link to="/">Review or edit obligations</Link></Button>
+      <Button asChild variant="outline" className="mt-5"><Link to="/obligations">Review or edit obligations</Link></Button>
     </section>
 
     <section hidden={step !== 1} aria-label="Net payment flows" className="demo-panel">

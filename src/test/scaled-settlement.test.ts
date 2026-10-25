@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_OBLIGATIONS, netObligations } from '@/lib/netting';
 import { DEFAULT_ISSUER } from '@/lib/stellar';
-import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaleTrades, scaledNet, snapshotUnchanged, usdcAmount } from '@/lib/scaled-settlement';
+import { DEFAULT_SCALE, SETTLEMENT_SCALES, generateScaledInstruction, reconcileScaled, scaleTrades, scaledNet, settlementLifecycle, snapshotUnchanged, usdcAmount, type ScaledStatus } from '@/lib/scaled-settlement';
 
 const base = netObligations(SAMPLE_OBLIGATIONS);
 
@@ -122,5 +122,27 @@ describe('reconcileScaled', () => {
   it('marks Failed for an unsuccessful network transaction', () => {
     const result = reconcileScaled(instruction, { ok: false, failed: true, reasons: ['Network transaction failed.'] }, SAMPLE_OBLIGATIONS, []);
     expect(result.status).toBe('Failed');
+  });
+});
+
+describe('settlementLifecycle', () => {
+  const instruction = generateScaledInstruction(SAMPLE_OBLIGATIONS, DEFAULT_SCALE);
+  it('maps every real instruction status to one product lifecycle state', () => {
+    expect(settlementLifecycle(null)).toBe('Not created');
+    expect(settlementLifecycle({ ...instruction, status: 'Instruction Created' })).toBe('Ready for review');
+    expect(settlementLifecycle({ ...instruction, status: 'Payment Submitted' })).toBe('Submitted / verifying');
+    expect(settlementLifecycle({ ...instruction, status: 'Payment Confirmed' })).toBe('Submitted / verifying');
+    expect(settlementLifecycle({ ...instruction, status: 'Reconciled' })).toBe('Reconciled');
+    expect(settlementLifecycle({ ...instruction, status: 'Exception — Mismatch' })).toBe('Exception');
+    expect(settlementLifecycle({ ...instruction, status: 'Failed' })).toBe('Exception');
+    expect(settlementLifecycle({ ...instruction, status: 'Verification unavailable' })).toBe('Verification unavailable');
+  });
+  it('shows Awaiting wallet approval only for the transient review/signing moment', () => {
+    expect(settlementLifecycle(instruction, true)).toBe('Awaiting wallet approval');
+    expect(settlementLifecycle(null, true)).toBe('Not created');
+  });
+  it('covers all statuses exhaustively', () => {
+    const statuses: ScaledStatus[] = ['Instruction Created', 'Payment Submitted', 'Payment Confirmed', 'Reconciled', 'Exception — Mismatch', 'Verification unavailable', 'Failed'];
+    for (const status of statuses) expect(settlementLifecycle({ ...instruction, status })).toBeTruthy();
   });
 });

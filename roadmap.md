@@ -1,3 +1,11 @@
+# Institutional product UX refinement
+- [x] Homepage opens the guided workflow (/ renders DemoWorkflow; Obligations moved to /obligations; /demo redirects to /; all routes preserved).
+- [x] One settlement lifecycle mapped from real instruction states: Not created / Ready for review / Awaiting wallet approval / Submitted / verifying / Reconciled / Exception / Verification unavailable, shown on the Settle card.
+- [x] Net step shows explicit scaled panel: original net, demo scale, scaled net, expected testnet USDC payment.
+- [x] Settle card shows source netting result and wallet readiness; review-before-signing preserved.
+- [x] One-sentence product explanation on the opening screen.
+- [x] Tests and browser validation.
+
 # Hackathon UX excellence pass
 - [x] Demo Workflow as primary experience: one step at a time, checkmarked progress indicator, per-step purpose sentence and primary action (Review Netting / Generate Settlement Instruction / state-driven settle action / View Audit Trail).
 - [x] Step 1 compact contract cards (ID, GPU-hours, agreed forward price, simulated fixing, obligation+payer); formulas in Advanced Details; H100 as optional "Explore Market Prices".

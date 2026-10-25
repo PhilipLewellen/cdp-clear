@@ -87,6 +87,22 @@ export function generateScaledInstruction(trades: Obligation[], scale: Settlemen
   };
 }
 
+/** One product-facing lifecycle mapped from real instruction states; never invents transitions. */
+export type SettlementLifecycle = 'Not created' | 'Ready for review' | 'Awaiting wallet approval' | 'Submitted / verifying' | 'Reconciled' | 'Exception' | 'Verification unavailable';
+export function settlementLifecycle(instruction: ScaledInstruction | null | undefined, awaitingApproval = false): SettlementLifecycle {
+  if (!instruction) return 'Not created';
+  if (awaitingApproval) return 'Awaiting wallet approval';
+  switch (instruction.status) {
+    case 'Instruction Created': return 'Ready for review';
+    case 'Payment Submitted':
+    case 'Payment Confirmed': return 'Submitted / verifying';
+    case 'Reconciled': return 'Reconciled';
+    case 'Exception — Mismatch':
+    case 'Failed': return 'Exception';
+    case 'Verification unavailable': return 'Verification unavailable';
+  }
+}
+
 /** The instruction stays valid only while the booked portfolio still reproduces its snapshot. */
 export function snapshotUnchanged(instruction: ScaledInstruction, trades: Obligation[]): boolean {
   return instruction.snapshot === JSON.stringify(scaleTrades(trades, instruction.divisor));
