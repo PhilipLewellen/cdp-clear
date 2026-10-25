@@ -25,6 +25,13 @@ T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A p
 - Implemented: GPU-forward payoff derivation, state-driven Overview, local audit events, shared netting maths, eligibility/date validation, lifecycle metadata, instruction register, issuer/network validation, read-only Horizon confirmation and field-level reconciliation.
 - Not implemented: external payment authorisation, payment sending, wallet signing, mainnet, live derivative valuation, real FX/market prices, persistence beyond browser localStorage or production-grade multi-operator controls.
 
+## Phase 2 — wallet and settlement asset
+Connect Freighter on **Stellar Testnet**, open Settlement and enter the beneficiary public address in **Wallet & Settlement Asset**. Use the connected payer address for a new draft if appropriate; existing instructions are never silently rewritten. The panel uses the SDK's `Horizon.Server("https://horizon-testnet.stellar.org").loadAccount()` for actual account data and matches both code **USDC** and exact configured issuer. It rechecks the wallet network/account, refreshes every 30 seconds/on focus, and supports manual refresh. No balances are persisted or fabricated.
+
+XLM available before fees subtracts sponsorship-adjusted reserves and selling liabilities, using current ledger reserve/base fee values. Spendable USDC subtracts selling liabilities and requires full trustline authorisation. Beneficiary checks include account existence, exact trustline, full authorisation and remaining limit after buying liabilities. Amount above spendable USDC, insufficient XLM, an instruction payer mismatch or missing prerequisites cannot produce a positive funding status. These are lookup-time balance prerequisites, not a transaction guarantee; fee surges, signatures and subsequent changes still matter.
+
+Issuer documentation verified on 2026-10-25: https://developers.circle.com/stablecoins/usdc-contract-addresses lists Stellar Testnet `USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`. Test tokens have **no financial value and no real USD backing**. Revalidate official documentation before enabling any future transactions. Phase 2 does **not** sign, send payments or change settlement lifecycle based on funding. Real Freighter connection requires a browser with the extension; funded accounts/trustlines/test USDC may require a wallet or Stellar mentor.
+
 ## Tests
 `bunx vitest run`
 

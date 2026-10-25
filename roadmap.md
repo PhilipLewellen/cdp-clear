@@ -1,3 +1,12 @@
+# Phase 2 wallet balances and asset validation
+- [x] Share the live Freighter connection across the header and Settlement.
+- [x] Query exact-issuer Testnet balances, reserves, liabilities and beneficiary authorisation.
+- [x] Add compact settlement funding checks and test missing prerequisites; keep execution disabled.
+- [x] Verify live public-account reads and browser states using an emulated Freighter connection with real Horizon balances.
+- [ ] Verify with a real Freighter extension (requires the user's browser extension; sandbox cannot install it).
+
+Phase 2 validation: official Circle contract-address documentation confirms the exact Stellar Testnet issuer on 2026-10-25. All 74 tests pass; build OK. Browser checked real public-account balances (2.9999900 XLM / 0.0100000 USDC), beneficiary authorisation and insufficient funding for the 1500 USDC proposal. Disconnect clears balances, mobile has no document overflow, and no page errors occurred. Only wallet access was emulated; balances were live SDK Horizon reads. Payment execution remains disabled; no successful payment or real extension connection is claimed.
+
 # Phase 1 wallet connection
 - [x] Freighter connect/disconnect in header, Testnet-only guard, no persistence.
 - [ ] Real Freighter connection check on published site (needs the user's browser extension).
