@@ -1,7 +1,9 @@
 # Phase 4 retrospective reconciliation
-- [ ] Add separate persistent TEST-SETTLEMENT-001 with saved Phase 3 evidence or explicit operator entry.
-- [ ] Independently verify all paginated operations, exact fields and allocation; retain actual results and audit times.
-- [ ] Test persistence, mismatch and read-only flows; preserve payments, balances and simulated netting.
+- [x] Add separate persistent TEST-SETTLEMENT-001 with saved Phase 3 evidence or explicit operator entry.
+- [x] Independently verify all paginated operations, exact fields and allocation; retain actual results and audit times.
+- [x] Test persistence, mismatch and read-only flows; preserve payments, balances and simulated netting.
+
+Phase 4 validation: 105 tests pass. Browser reconciled a genuine pre-existing public 1 USDC Testnet payment through live SDK Horizon reads, retained result on reload, independently verified again and rejected a deliberately mismatched recipient. No Horizon POST requests or browser errors occurred. This public payment was used only in temporary browser checks, never seeded in the application and is not claimed as the user's payment. User-specific verification still requires their hash and expected public addresses, or saved Phase 3 references. Original confirmation timestamp and later reconciliation timestamp are separately displayed. Existing simulated netting remains 3100 gross / 1500 net / 51.6% reduction.
 
 # Phase 3 separate Testnet payment
 - [x] Add fixed 1.0000000 USDC payment review, fresh prerequisites and Freighter signing.

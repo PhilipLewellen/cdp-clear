@@ -6,7 +6,7 @@ export interface ActualPayment { id: string; transaction_hash: string; transacti
 export interface TestChecks { sender: boolean; recipient: boolean; amount: boolean; asset: boolean; confirmed: boolean; membership: boolean; }
 export interface TestResult { status: TestStatus; reasons: string[]; checks: TestChecks; payments: ActualPayment[]; operationId?: string; confirmedAt?: string; ledger?: number; checkedAt: string; }
 export interface TestAudit { action: string; at: string; detail: string; }
-export interface TestSettlement { id: string; source: string; destination: string; hash: string; createdAt: string; result: TestResult | null; audit: TestAudit[]; allocatedHashes?: string[]; }
+export interface TestSettlement { id: string; source: string; destination: string; hash: string; createdAt: string; result: TestResult | null; audit: TestAudit[]; allocatedHashes?: string[] | undefined; }
 export function createTestSettlement(source = '', destination = '', hash = ''): TestSettlement {
   const at = new Date().toISOString();
   return { id: TEST_RECORD_ID, source, destination, hash, createdAt: at, result: null, audit: [{ action: 'Settlement record created', at, detail: 'Retrospective 1.0000000 USDC test reconciliation' }, ...(hash ? [{ action: 'Existing transaction associated', at, detail: hash }] : [])] };
