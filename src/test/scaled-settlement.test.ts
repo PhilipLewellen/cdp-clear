@@ -11,8 +11,8 @@ describe('scaleTrades', () => {
     expect(scaled.map(t => t.economics?.quantity)).toEqual([1, 0.4, 0.3]);
     expect(scaled.map(t => [t.economics?.strike, t.economics?.fixing])).toEqual([[3, 5], [4, 2], [3, 4]]);
     expect(SAMPLE_OBLIGATIONS[0].economics?.quantity).toBe(1000);
-    expect(scaled[0].settlementDate).toBe(SAMPLE_OBLIGATIONS[0].settlementDate);
-    expect(scaled[0].eligible).toBe(true);
+    expect(scaled[0]?.settlementDate).toBe(SAMPLE_OBLIGATIONS[0]?.settlementDate);
+    expect(scaled[0]?.eligible).toBe(true);
   });
   it('rejects invalid divisors', () => {
     expect(() => scaleTrades(SAMPLE_OBLIGATIONS, 0)).toThrow();
