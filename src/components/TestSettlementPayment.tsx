@@ -80,7 +80,7 @@ export function TestSettlementPayment({ onSuccess, guided = false }: { onSuccess
     finally { guard.current = false; setPhase(''); }
   };
   return <section className="settlement-section" aria-label="Separate Testnet payment">
-    <div className="module-heading"><h2>Separate 1 USDC test settlement</h2><span>Phase 3 · Stellar Testnet</span></div>
+    <div className="module-heading"><h2>Separate 1 USDC test settlement</h2><span>Historical · Stellar Testnet</span></div>
     <p className="mb-4 text-xs text-warning">{TEST_PAYMENT_AMOUNT} USDC test tokens only. This does not pay the simulated net obligation or reconcile any instruction.</p>
     <details open={!guided} className="mb-4"><summary>{guided ? 'Advanced Details · sender and asset issuer' : 'Sender and asset issuer'}</summary><dl className="mt-3 grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-xs"><dt className="text-muted-foreground">Sender</dt><dd className="break-all font-mono">{wallet.status === 'connected' ? wallet.address : 'Connect Freighter on Testnet'}</dd><dt className="text-muted-foreground">Asset issuer</dt><dd className="break-all font-mono">{USDC_ASSET.issuer}</dd></dl></details>
     <label className="block text-xs text-muted-foreground">Test payment recipient public address<input aria-label="Test payment recipient public address" placeholder="G… public Stellar Testnet address" className={`${inputCls} mt-2`} value={recipient} disabled={busy || Boolean(pending) || Boolean(confirmed)} onChange={event => { const value = event.target.value.trim(); if (value.startsWith('S')) { setError('Secret keys are not accepted. Enter a public G-address only.'); return; } setRecipient(value); setPrepared(null); setError(''); }} /></label>
