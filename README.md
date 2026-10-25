@@ -23,7 +23,7 @@ T-001: 1000 GPU-hours × ($5 simulated fixing − $3 strike) = $2000 long CP-A p
 
 ## Implemented vs not
 - Implemented: GPU-forward payoff derivation, state-driven Overview, local audit events, shared netting maths, eligibility/date validation, lifecycle metadata, instruction register, issuer/network validation, read-only Horizon confirmation and field-level reconciliation.
-- Not implemented: app execution of the simulated net obligation, Phase 4 integration/reconciliation of the separate test payment, mainnet, live derivative valuation, real FX/market prices or production-grade multi-operator controls.
+- Not implemented: app execution of the simulated net obligation, mainnet, live derivative valuation, real FX/market prices or production-grade multi-operator controls.
 
 ## Phase 2 — wallet and settlement asset
 Connect Freighter on **Stellar Testnet**, open Settlement and enter the beneficiary public address in **Wallet & Settlement Asset**. Use the connected payer address for a new draft if appropriate; existing instructions are never silently rewritten. The panel uses the SDK's `Horizon.Server("https://horizon-testnet.stellar.org").loadAccount()` for actual account data and matches both code **USDC** and exact configured issuer. It rechecks the wallet network/account, refreshes every 30 seconds/on focus, and supports manual refresh. No balances are persisted or fabricated.
@@ -45,4 +45,11 @@ Tests cover economics, dates/eligibility, duplicate hashes and obligation snapsh
 4. A hash and Stellar Expert link appear only after independent Horizon verification of a successful matching 1 USDC payment. Live balances refresh. The $1,500 simulated NSO and all instruction lifecycle/reconciliation records are untouched.
 5. Rejection or pre-submission errors never show success. Ambiguous submission blocks another payment and offers **Check payment status**; unresolved public hash/addresses survive reload in the same tab, but no keys or signed XDR are stored. Do not resend from another tab/device when outcome is uncertain. Failures with confirmed network result may require manual review before another attempt.
 
-Phase 4 is not implemented. Real extension approval/submission cannot be verified in the sandbox; no genuine payment is claimed without that user-authorised flow.
+Real extension approval/submission cannot be verified in the sandbox; no genuine payment is claimed without that user-authorised flow.
+
+## Phase 4 — retrospective existing-payment reconciliation
+Open **Retrospective test reconciliation** on Settlement. `TEST-SETTLEMENT-001` expects exactly **1.0000000 USDC** of the configured Circle Stellar Testnet issuer, separate from the illustrative USD 1,500 obligation. Previously saved Phase 3 public references are prefilled; older successful payments were not retained after reload, so paste their hash and enter expected sender/recipient if missing. No invented address or hash is supplied.
+
+Review the expected instruction and click **Reconcile Existing Payment**. This is read-only: no Freighter signature, transaction construction, submission, USDC deduction or XLM fee. SDK Horizon reads verify the fixed Testnet network, successful transaction, every paginated payment operation, operation membership/success, sender, recipient, exact integer-stroop amount and asset/issuer. Only a complete match is **Reconciled**; mismatches show **Exception — Mismatch**, and missing transactions/outages show **Verification unavailable**. **Verify Again** repeats independent reads.
+
+The actual operation fields, hash, blockchain confirmation time, later verification time and audit events are retained in the existing browser-local store. The record survives refresh and demo reset; successful Phase 3 public references are saved without signed XDR or wallet access. Allocation is browser-local, not cross-user or tamper-proof; the test record cannot share a reconciled transaction with simulated instructions. Test reconciliation does not settle or legally discharge any compute derivatives contract. A real existing payment hash and expected addresses are needed to verify your payment; no additional test USDC is required.
