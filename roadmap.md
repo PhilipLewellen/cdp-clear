@@ -1,3 +1,8 @@
+# Market-driven valuation UX
+- [ ] Automatically load full-precision H100 market valuation across Calculate and Net with truthful feed states.
+- [ ] Collapse original example, remove scenario controls and duplicate comparisons, confirm booked settlement calculation explicitly.
+- [ ] Verify precision, loading/failure/cache handling and unchanged settlement/evidence records.
+
 # Verifiable settlement evidence
 - [x] Capture versioned financial snapshots and browser SHA-256 fingerprints for new instructions only.
 - [x] Reuse read-only Horizon verification to retain genuine operation details and checks; add Step 4 evidence review and JSON export.
