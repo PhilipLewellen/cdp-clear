@@ -11,9 +11,9 @@ import { TradeEconomics } from '@/components/TradeEconomics';
 export const Route = createFileRoute("/obligations")({
   head: () => ({
     meta: [
-      { title: "Settlement Obligations — CDP Clear" },
+      { title: "Settlement Obligations | CDP Clear" },
       { name: "description", content: "Illustrative contractual cash obligations and lifecycle metadata for CP-A and CP-B." },
-      { property: "og:title", content: "Settlement Obligations — CDP Clear" },
+      { property: "og:title", content: "Settlement Obligations | CDP Clear" },
       { property: "og:description", content: "Illustrative contractual cash obligations and lifecycle metadata for CP-A and CP-B." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -15,9 +15,9 @@ import { LIFECYCLE, obligationSnapshot, publicAddress, reconcileInstruction, set
 
 export const Route = createFileRoute('/settlement')({
   head: () => ({ meta: [
-    { title: 'Cash-Leg Settlement & Reconciliation — CDP Clear' },
+    { title: 'Cash-Leg Settlement & Reconciliation | CDP Clear' },
     { name: 'description', content: 'USDC cash-leg instruction lifecycle, independent Stellar Testnet confirmation and obligation reconciliation.' },
-    { property: 'og:title', content: 'Cash-Leg Settlement & Reconciliation — CDP Clear' },
+    { property: 'og:title', content: 'Cash-Leg Settlement & Reconciliation | CDP Clear' },
     { property: 'og:description', content: 'USDC cash-leg instruction lifecycle, independent Stellar Testnet confirmation and obligation reconciliation.' },
     { property: 'og:type', content: 'website' },
     { name: 'twitter:card', content: 'summary_large_image' },

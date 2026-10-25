@@ -9,9 +9,9 @@ import { overviewSettlement, signedNet, stressObligations } from '@/lib/risk-ove
 
 export const Route = createFileRoute('/overview')({
   head: () => ({ meta: [
-    { title: 'Risk & Settlement Overview — CDP Clear' },
+    { title: 'Risk & Settlement Overview | CDP Clear' },
     { name: 'description', content: 'Booked GPU-forward cash exposure, hypothetical GPU fixing scenarios and evidence-based settlement monitoring.' },
-    { property: 'og:title', content: 'Risk & Settlement Overview — CDP Clear' },
+    { property: 'og:title', content: 'Risk & Settlement Overview | CDP Clear' },
     { property: 'og:description', content: 'Bilateral cash flows, isolated GPU-price stress calculations and current testnet settlement evidence.' },
     { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
   ] }), component: Overview,

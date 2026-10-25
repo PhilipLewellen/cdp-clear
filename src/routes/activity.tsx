@@ -5,9 +5,9 @@ import { useStore } from '@/lib/use-store';
 
 export const Route = createFileRoute('/activity')({
   head: () => ({ meta: [
-    { title: 'Operational Activity — CDP Clear' },
+    { title: 'Operational Activity | CDP Clear' },
     { name: 'description', content: 'Browser-local demo actions and independently verified Stellar Testnet evidence.' },
-    { property: 'og:title', content: 'Operational Activity — CDP Clear' },
+    { property: 'og:title', content: 'Operational Activity | CDP Clear' },
     { property: 'og:description', content: 'Chronological post-trade operations and verified testnet evidence; no fabricated payments.' },
     { property: 'og:type', content: 'website' },
     { name: 'twitter:card', content: 'summary_large_image' },

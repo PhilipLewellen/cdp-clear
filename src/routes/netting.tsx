@@ -8,9 +8,9 @@ import { fmt, netObligations } from "@/lib/netting";
 export const Route = createFileRoute("/netting")({
   head: () => ({
     meta: [
-      { title: "Bilateral Payment Netting — CDP Clear" },
+      { title: "Bilateral Payment Netting | CDP Clear" },
       { name: "description", content: "Bilateral netting of gross obligations into one net payment." },
-      { property: "og:title", content: "Bilateral Payment Netting — CDP Clear" },
+      { property: "og:title", content: "Bilateral Payment Netting | CDP Clear" },
       { property: "og:description", content: "Bilateral netting of gross obligations into one net payment." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
