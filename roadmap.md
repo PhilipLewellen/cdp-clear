@@ -1,3 +1,9 @@
+# Final homepage & settlement UX
+- [x] Homepage headline "From derivatives exposure to verified settlement." with supporting description above the four-step workflow.
+- [x] Historical 1 USDC payment + reconciliation removed from Demo Workflow; now in collapsed "Advanced Tools / Historical Test Payments" on the Settlement page (records untouched).
+- [x] Scale selector can no longer overwrite an existing instruction (Generate disabled while instruction matches the portfolio).
+- [x] Tests and browser validation.
+
 # Institutional product UX refinement
 - [x] Homepage opens the guided workflow (/ renders DemoWorkflow; Obligations moved to /obligations; /demo redirects to /; all routes preserved).
 - [x] One settlement lifecycle mapped from real instruction states: Not created / Ready for review / Awaiting wallet approval / Submitted / verifying / Reconciled / Exception / Verification unavailable, shown on the Settle card.

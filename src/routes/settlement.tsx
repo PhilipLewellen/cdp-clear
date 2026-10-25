@@ -129,8 +129,11 @@ function Settlement() {
       </section>
       </div>
       <div className="settlement-side">
-        <TestSettlementReconciliation />
-        <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
+        <details className="settlement-section"><summary className="text-sm font-medium">Advanced Tools / Historical Test Payments</summary>
+          <p className="mb-4 mt-3 text-xs text-muted-foreground">The standalone 1 USDC Testnet payment and its reconciliation record from development. Unrelated to the scaled settlement workflow; all hashes, records and audit events are preserved.</p>
+          <TestSettlementReconciliation />
+          <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
+        </details>
         <WalletSettlementAsset refreshVersion={balanceRefresh} amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
         {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
       <section className="settlement-section">

@@ -57,15 +57,17 @@ export function ScaledSettlementCalc() {
       </dl>
       <p className="mt-3 text-xs text-muted-foreground">The {scaled.net > 0 ? usdcAmount(scaled.net) : '0'} USDC payment represents the scaled portfolio only; the original {originalOk.ok ? fmt(originalOk.net, originalOk.currency) : ''} obligation is not settled by this transfer. Testnet USDC has no real monetary value.</p>
       {scaled.net <= 0 && <p className="mt-3 text-xs text-warning">Net obligation is zero at this scale; no payment is required.</p>}
-      <Button className="mt-4" disabled={!ready} onClick={generate}>Generate Settlement Instruction</Button>
+      {scaledInstruction && snapshotUnchanged(scaledInstruction, trades)
+        ? <p className="mt-4 text-xs">Instruction <span className="font-mono">{scaledInstruction.id}</span> already exists · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span> — changing the scale never overwrites an existing instruction. Continue to Settle.</p>
+        : <Button className="mt-4" disabled={!ready} onClick={generate}>{scaledInstruction ? 'Generate New Instruction' : 'Generate Settlement Instruction'}</Button>}
       {error && <p role="alert" className="mt-3 text-xs text-destructive">{error}</p>}
-      {scaledInstruction && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span>{!snapshotUnchanged(scaledInstruction, trades) && <span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span>}</p>}
+      {scaledInstruction && !snapshotUnchanged(scaledInstruction, trades) && <p className="mt-3 text-xs">Current instruction <span className="font-mono">{scaledInstruction.id}</span> · <span className={statusTone(scaledInstruction.status)}>{scaledInstruction.status}</span><span className="text-warning"> · Portfolio changed since generation — generate a new instruction.</span></p>}
     </>}
   </section>;
 }
 
 /** Step 3 — instruction details, Freighter review and the real scaled USDC payment. */
-export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSuccess: () => void; onViewVerified?: () => void }) {
+export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSuccess?: () => void; onViewVerified?: () => void }) {
   const { trades, scaledInstruction, setScaledInstruction } = useStore();
   const wallet = useFreighter();
   const [recipient, setRecipient] = useState('');
@@ -101,7 +103,7 @@ export function ScaledSettlementPayment({ onSuccess, onViewVerified }: { onSucce
     setPending(null);
     setPrepared(null);
     setScaledInstruction({ ...instruction, status: 'Payment Confirmed', txHash: result.hash, ledger: result.ledger, confirmedAt: new Date().toISOString(), payerAddress: payment.source, recipient: payment.destination, verifiedNote: 'Blockchain transaction confirmed; reconciliation runs in step 4.' });
-    onSuccess();
+    onSuccess?.();
   };
   const review = async () => {
     if (guard.current || testPaymentSession.locked || pending || paid) return;
