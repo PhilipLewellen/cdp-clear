@@ -181,7 +181,15 @@ export function ScaledSettlementVerify() {
   const [exceptionOpen, setExceptionOpen] = useState(false);
   const guard = useRef(false);
   const instruction = scaledInstruction;
-  if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement verification"><div className="module-heading"><h2>Scaled settlement verification</h2><span>Horizon</span></div><p className="text-sm text-muted-foreground">No scaled settlement instruction exists yet. Generate one in step 2.</p></section>;
+  if (!instruction) return <section className="settlement-section" aria-label="Scaled settlement verification">
+    <div className="module-heading"><h2>Scaled settlement verification</h2><span>Horizon</span></div>
+    <p className="text-sm text-muted-foreground">No scaled settlement instruction exists yet. Generate one in step 2.</p>
+    <div className="mt-6 border-t border-border pt-4">
+      <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
+      <p className="mt-2 text-xs text-muted-foreground">Isolated demonstration: reconcile a real confirmed Testnet payment against a deliberately incorrect hypothetical instruction. No records change and no payment is made.</p>
+    </div>
+    {exceptionOpen && <SettlementException defaultHash="" onClose={() => setExceptionOpen(false)} />}
+  </section>;
   const verify = async () => {
     if (guard.current || !instruction.txHash || !instruction.payerAddress || !instruction.recipient) return;
     guard.current = true; setPhase('Verifying on Stellar Testnet…');
