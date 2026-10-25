@@ -25,6 +25,7 @@ export async function prepareTestPayment(source: string, destination: string): P
   const server = new Horizon.Server(STELLAR_CONFIG.horizonUrl);
   const [data, account, fees] = await Promise.all([loadWalletBalances(source, destination), server.loadAccount(source), server.feeStats()]);
   const fee = [BigInt(fees.last_ledger_base_fee), BigInt(fees.fee_charged.p95)].reduce((a, b) => a > b ? a : b);
+  if (fee > 100_000n) throw new Error('Estimated fee exceeds the 0.0100000 XLM safety limit. Retry when fees fall.');
   data.feeXlm = decimal(fee);
   const reasons = fundingChecks(data, 1, source, destination, USDC_ASSET.issuer);
   if (reasons.length) throw new Error(reasons.join(' '));
@@ -48,10 +49,12 @@ export async function readTestPayment(hash: string, payment: PreparedTestPayment
 }
 
 export async function submitTestPayment(payment: PreparedTestPayment, signedXdr: string, onSubmission: (hash: string) => void): Promise<ConfirmedTestPayment | null> {
-  const { Horizon, TransactionBuilder, Transaction, Networks } = await import('@stellar/stellar-sdk');
+  const { Horizon, TransactionBuilder, Transaction, Networks, Keypair } = await import('@stellar/stellar-sdk');
   const original = TransactionBuilder.fromXDR(payment.xdr, Networks.TESTNET);
   const signed = TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET);
   if (!(signed instanceof Transaction) || signed.hash().toString('hex') !== original.hash().toString('hex') || !signed.signatures.length) throw new Error('Freighter returned an altered or unsigned transaction. Nothing submitted.');
+  const signer = Keypair.fromPublicKey(payment.source);
+  if (!signed.signatures.some(signature => signer.verify(signed.hash(), signature.signature()))) throw new Error('Signed transaction lacks a valid payer signature. Nothing submitted.');
   if (Date.now() >= payment.expiresAt) throw new Error('Transaction expired before submission. Review and sign again.');
   const server = new Horizon.Server(STELLAR_CONFIG.horizonUrl);
   const root = await server.root();

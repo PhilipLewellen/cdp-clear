@@ -63,14 +63,17 @@ export function useFreighterConnection() {
     return addr.address;
   }, [state.status, state.address]);
 
-  // Reserved for later phases; refuses unless connected on Testnet.
+  // Separate Phase 3 payment; recheck the account/network around local signing.
   const signTransaction = useCallback(async (xdr: string) => {
-    if (state.status !== "connected" || !state.address) throw new Error("Connect Freighter on Stellar Testnet first.");
+    const address = await checkConnection();
+    const attempt = generation.current;
     const api = await freighter();
-    const res = await api.signTransaction(xdr, { networkPassphrase: STELLAR_CONFIG.networkPassphrase, address: state.address });
+    const res = await api.signTransaction(xdr, { networkPassphrase: STELLAR_CONFIG.networkPassphrase, address });
     if (res.error) throw new Error(errText(res.error, "Signing was rejected."));
+    if (attempt !== generation.current || await checkConnection() !== address) throw new Error('Wallet changed during signing. Nothing submitted.');
+    if (!res.signedTxXdr) throw new Error('Signing was cancelled or no signed transaction returned.');
     return res.signedTxXdr;
-  }, [state.status, state.address]);
+  }, [checkConnection]);
 
   return { ...state, connect, disconnect, checkConnection, signTransaction };
 }
