@@ -1,6 +1,5 @@
-# CDP Clear refinement
-- [x] Refine branding, trade metadata and bilateral netting presentation without rebuilding.
-- [x] Add accurate USDC instruction lifecycle, network confirmation, reconciliation and duplicate protection.
-- [x] Test financial and verification rules, verify the three-page workflow, and update documentation.
-
-Verification: live issuer/network lookup and missing transaction tested; successful confirmation/reconciliation tested with controlled network fixtures, not a real successful payment.
+# CDP Clear workstation redesign
+- [ ] Apply compact charcoal/navy workstation styling and unified navigation/status bar.
+- [ ] Redesign the editable trade blotter and dynamic gross-versus-net comparison.
+- [ ] Organise settlement into four compact modules while preserving verification and lifecycle controls.
+- [ ] Run financial regressions and verify the three-page workflow and desktop/mobile layouts.
