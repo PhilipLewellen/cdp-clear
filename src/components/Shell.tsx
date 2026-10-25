@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/use-store";
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, RotateCcw } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
 
-const tabs = [
-  { to: "/demo", label: "Demo Workflow" },
+const primaryTab = { to: "/demo", label: "Demo Workflow" } as const;
+const operationTabs = [
   { to: "/overview", label: "Overview" },
   { to: "/", label: "Obligations" },
   { to: "/netting", label: "Netting" },
@@ -17,6 +17,7 @@ const tabs = [
 
 export function Shell({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   const { reset } = useStore();
+  const [confirmReset, setConfirmReset] = useState(false);
   return (
     <div className="workstation min-h-screen">
       <header className="border-b border-border bg-card">
@@ -25,9 +26,12 @@ export function Shell({ title, intro, children }: { title: string; intro: string
           <div className="flex flex-wrap items-center justify-end gap-3"><span className="text-[11px] text-muted-foreground">STELLAR TESTNET <span className="mx-2 text-border">/</span> USDC <span className="mx-2 text-border">/</span> <b className="font-medium text-warning">DEMO · NO REAL FUNDS</b></span><WalletConnect /></div>
         </div>
       </header>
-      <nav aria-label="Operations workflow" className="border-b border-border">
-        <div className="mx-auto flex max-w-[1480px] gap-1 overflow-x-auto px-4 sm:px-6">
-            {tabs.map(t => <Button key={t.to} asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={t.to} className={t.to === '/demo' ? 'text-primary font-semibold' : 'text-muted-foreground'} activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{t.label}</Link></Button>)}
+      <nav aria-label="Primary" className="border-b border-border">
+        <div className="mx-auto flex max-w-[1480px] items-center gap-1 overflow-x-auto px-4 sm:px-6">
+            <Button asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={primaryTab.to} className="text-primary font-semibold" activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{primaryTab.label}</Link></Button>
+            <span aria-hidden="true" className="mx-2 h-5 w-px shrink-0 bg-border" />
+            <span className="shrink-0 pr-1 text-[10px] uppercase tracking-wider text-muted-foreground">Operations</span>
+            {operationTabs.map(t => <Button key={t.to} asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={t.to} className="text-muted-foreground" activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{t.label}</Link></Button>)}
         </div>
       </nav>
       <main className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6">
@@ -39,7 +43,9 @@ export function Shell({ title, intro, children }: { title: string; intro: string
       </main>
       <footer className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-2 px-4 pb-5 text-[10px] text-muted-foreground sm:px-6">
         <span>HackMeridian · Illustrative obligations · Testnet only / no real funds</span>
-        <Button variant="ghost" size="sm" onClick={reset}><RotateCcw className="size-3" />Reset demo data</Button>
+        {confirmReset
+          ? <span className="flex flex-wrap items-center gap-2"><span className="text-warning">Reset all saved demo data, including instructions and reconciliation records?</span><Button variant="ghost" size="sm" className="text-destructive" onClick={() => { reset(); setConfirmReset(false); }}>Confirm reset</Button><Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>Cancel</Button></span>
+          : <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)}><RotateCcw className="size-3" />Reset demo data</Button>}
       </footer>
     </div>
   );
