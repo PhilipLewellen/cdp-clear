@@ -1,6 +1,7 @@
 import { deriveObligation, netObligations, type NetResult, type Obligation, type Party } from './netting';
 import { DEFAULT_ISSUER, verifyTestnetPayment, type VerifyResult } from './stellar';
 import { decimal } from './wallet-balances';
+import { captureFinancialSnapshot, fingerprintSnapshot, type FinancialSnapshot } from './financial-snapshot';
 
 // Scaled Stellar Testnet Demonstration. Illustrative assumption: 1 USD = 1 USDC.
 // Scaling never alters booked trades, the historical 1 USDC record or any reconciliation state.
@@ -56,6 +57,9 @@ export interface ScaledInstruction {
   confirmedAt?: string | undefined;
   reconciledAt?: string | undefined;
   verifiedNote?: string | undefined;
+  financialSnapshot?: FinancialSnapshot;
+  financialFingerprint?: string;
+  paymentVerification?: VerifyResult;
 }
 
 export function generateScaledInstruction(trades: Obligation[], scale: SettlementScale): ScaledInstruction {
@@ -85,6 +89,14 @@ export function generateScaledInstruction(trades: Obligation[], scale: Settlemen
     status: 'Instruction Created',
     txHash: '',
   };
+}
+
+/** Only new instructions receive original provenance; never upgrade historical records. */
+export async function generateFingerprintedInstruction(trades: Obligation[], scale: SettlementScale): Promise<ScaledInstruction> {
+  const instruction = generateScaledInstruction(trades, scale);
+  const financialSnapshot = captureFinancialSnapshot(trades, instruction);
+  const financialFingerprint = await fingerprintSnapshot(financialSnapshot);
+  return { ...instruction, financialSnapshot, financialFingerprint };
 }
 
 /** One product-facing lifecycle mapped from real instruction states; never invents transitions. */
@@ -121,9 +133,10 @@ export function reconcileScaled(instruction: ScaledInstruction, result: VerifyRe
 
 export async function verifyScaledInstruction(instruction: ScaledInstruction, trades: Obligation[], allocatedHashes: string[]): Promise<ScaledInstruction> {
   try {
-    const result = await verifyTestnetPayment({ hash: instruction.txHash, source: instruction.payerAddress, destination: instruction.recipient, amount: Number(instruction.usdcAmount), assetCode: instruction.assetCode, assetIssuer: instruction.assetIssuer });
-    return reconcileScaled(instruction, result, trades, allocatedHashes);
+    const result = await verifyTestnetPayment({ hash: instruction.txHash, source: instruction.payerAddress, destination: instruction.recipient, amount: instruction.usdcAmount, assetCode: instruction.assetCode, assetIssuer: instruction.assetIssuer });
+    return { ...reconcileScaled(instruction, result, trades, allocatedHashes), paymentVerification: result };
   } catch (error) {
-    return { ...instruction, status: 'Verification unavailable', verifiedNote: error instanceof Error ? error.message : 'Horizon verification unavailable.' };
+    const note = error instanceof Error ? error.message : 'Horizon verification unavailable.';
+    return { ...instruction, status: 'Verification unavailable', verifiedNote: note, paymentVerification: { ok: false, reasons: [note], verifiedAt: new Date().toISOString() } };
   }
 }
