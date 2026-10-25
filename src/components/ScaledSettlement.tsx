@@ -201,6 +201,16 @@ export function ScaledSettlementVerify() {
   const canVerify = Boolean(instruction.txHash && instruction.payerAddress && instruction.recipient);
   return <section className="settlement-section" aria-label="Scaled settlement verification">
     <div className="module-heading"><h2>Scaled settlement verification</h2><span>{instruction.id}</span></div>
+    {instruction.status === 'Reconciled' && <div className="mb-5 rounded border border-border bg-card p-4" role="status" aria-label="Settlement Reconciled">
+      <p className="flex items-center gap-2 text-lg font-semibold text-success"><CheckCircle2 className="size-5 shrink-0" />Settlement Reconciled</p>
+      <dl className="mt-4 grid grid-cols-[180px_minmax(0,1fr)] gap-2 text-xs">
+        <dt className="text-muted-foreground">Expected vs actual amount</dt><dd className="font-mono">{instruction.usdcAmount} USDC · {instruction.usdcAmount} USDC · <span className="text-success">Match</span></dd>
+        <dt className="text-muted-foreground">Sender / recipient</dt><dd className="break-all font-mono">{instruction.payerAddress} → {instruction.recipient} · <span className="text-success">Match</span></dd>
+        <dt className="text-muted-foreground">Asset / issuer</dt><dd className="break-all font-mono">{instruction.assetCode} · {instruction.assetIssuer} · <span className="text-success">Match</span></dd>
+        {instruction.confirmedAt && <><dt className="text-muted-foreground">Confirmed on Stellar</dt><dd className="font-mono">{instruction.confirmedAt}{instruction.ledger ? ` · Ledger ${instruction.ledger}` : ''}</dd></>}
+      </dl>
+      <p className="mt-3 text-xs text-muted-foreground">The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>
+    </div>}
     <p className="mb-4 text-sm">Independent Horizon verification compares the confirmed blockchain payment against instruction {instruction.id}: network, success, sender, recipient, exact {instruction.usdcAmount} USDC amount, asset code and Circle Testnet issuer.</p>
     <dl className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Status</dt><dd className={statusTone(instruction.status)}>{instruction.status}</dd>
@@ -215,7 +225,6 @@ export function ScaledSettlementVerify() {
       {phase && <p role="status" className="text-xs text-primary">{phase}</p>}
     </div>
     {!canVerify && <p className="mt-3 text-xs text-muted-foreground">Verification becomes available after a payment transaction hash, payer wallet and recipient are recorded for this instruction.</p>}
-    {instruction.status === 'Reconciled' && <p className="mt-4 text-sm text-success">Scaled settlement reconciled against instruction {instruction.id}. The original {fmt(instruction.originalNet, 'USD')} obligation remains illustrative and is not discharged by this {instruction.usdcAmount} USDC testnet transfer.</p>}
     <div className="mt-6 border-t border-border pt-4">
       <Button variant="outline" disabled={exceptionOpen} onClick={() => setExceptionOpen(true)}><FlaskConical className="size-3.5" />Test a Settlement Exception</Button>
       <p className="mt-2 text-xs text-muted-foreground">Isolated demonstration: reconcile a real confirmed Testnet payment against a deliberately incorrect hypothetical instruction. No records change and no payment is made.</p>
