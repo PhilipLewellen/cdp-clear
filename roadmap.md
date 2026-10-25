@@ -1,7 +1,9 @@
 # Premium institutional visual polish
-- [ ] Refine shared typography, numerical hierarchy, surfaces and control states without touching financial services.
-- [ ] Improve mobile data layouts, focus visibility and touch targets; retain every workflow control.
-- [ ] Verify all routes, four viewport widths, calculations and saved records; no blockchain transactions.
+- [x] Refine shared typography, numerical hierarchy, surfaces and control states without touching financial services.
+- [x] Improve mobile data layouts, focus visibility and touch targets; retain every workflow control.
+- [x] Verify all routes, four viewport widths, calculations and saved records; no blockchain transactions.
+
+Validation: full 196-test suite passed, then 26 affected workflow/scaling tests passed after final amount styling; build OK. Browser loaded actual H100 reference 3.6842 (Provisional) and all seven content routes, checked all four workflow steps at 1440/1024/768/390 with no page overflow, runtime errors or Horizon POSTs; saved state was unchanged by navigation. Existing financial, fingerprint, evidence and reconciliation tests remained passing. Freighter signing, funded payment review and real payment were deliberately not exercised. Sources informed hierarchy and readable grouping, not a copied layout. Changes limited to styles.css, DemoWorkflow amount classes and ScaledSettlement amount markup, plus task/memory notes. Added control/surface radius tokens and reusable financial-value styling; no palette, service or architecture changes. Formal WCAG audit and real-wallet checks remain manual.
 
 # Final workflow consolidation
 - [x] Keep full market details in Calculate and only the shared valuation basis in Net.
