@@ -28,9 +28,10 @@ export function H100MarketPanel({ market }: { market: ReturnType<typeof useH100>
       <dt className="text-muted-foreground">Seven-day change</dt><dd className="font-mono">{pct(observation.chg7d)}</dd>
     </dl>}
     {stale && <p className="mt-3 text-xs text-warning">This observation is more than 24 hours old; refresh before relying on it.</p>}
+    <p className="mt-3 text-xs text-muted-foreground">Data: <a href={H100_SOURCE_URL} target="_blank" rel="noreferrer" className="text-primary underline">Compute Screener (computescreener.com)</a>, CC BY 4.0 · Periodically updated published index.</p>
     <details className="mt-4"><summary>Advanced Details · source and methodology</summary>
       <p className="mt-3 text-xs text-muted-foreground">Methodology version {observation?.methodologyVersion ?? 'not retrieved'}. This is a published rental price index — not a real-time exchange price, futures price or regulated settlement benchmark.</p>
-      <p className="mt-2 text-xs">Data: <a href={H100_SOURCE_URL} target="_blank" rel="noreferrer" className="text-primary underline">Compute Screener (computescreener.com)</a>, CC BY 4.0 · <a href={H100_METHODOLOGY_URL} target="_blank" rel="noreferrer" className="text-primary underline">Methodology ↗</a></p>
+      <p className="mt-2 text-xs"><a href={H100_METHODOLOGY_URL} target="_blank" rel="noreferrer" className="text-primary underline">Methodology ↗</a></p>
     </details>
   </section>;
 }

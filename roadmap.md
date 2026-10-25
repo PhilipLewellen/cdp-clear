@@ -1,7 +1,9 @@
 # Market-driven valuation UX
-- [ ] Automatically load full-precision H100 market valuation across Calculate and Net with truthful feed states.
-- [ ] Collapse original example, remove scenario controls and duplicate comparisons, confirm booked settlement calculation explicitly.
-- [ ] Verify precision, loading/failure/cache handling and unchanged settlement/evidence records.
+- [x] Automatically load full-precision H100 market valuation across Calculate and Net with truthful feed states.
+- [x] Collapse original example, remove scenario controls and duplicate comparisons, confirm booked settlement calculation explicitly.
+- [x] Verify precision, loading/failure/cache handling and unchanged settlement/evidence records.
+
+Market UX validation: 195 tests pass; build OK. Browser opened the actual Compute Screener feed automatically (3.6929 reference displayed, Provisional, observation 2026-10-25 and published update retained). A full-precision test price of 3.712949 yielded 1041.65 gross / 812.01 net while displaying 3.7129; explicit booked-calculation confirmation generated only the original 1.5000000 USDC instruction with 1500.00 net snapshot. Refresh to 2.85 reversed indicative direction without changing that instruction or fingerprint. Stale/cached/error states were visible; failed retrieval with no cache showed no derivative cards or fallback market valuation. No page errors, Horizon POSTs or 800px overflow. Wallet, payments and evidence functionality are unchanged; existing external Freighter manual checks remain blocked by the user's extension, not this valuation feature.
 
 # Verifiable settlement evidence
 - [x] Capture versioned financial snapshots and browser SHA-256 fingerprints for new instructions only.
