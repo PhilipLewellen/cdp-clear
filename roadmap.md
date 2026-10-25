@@ -1,7 +1,9 @@
 # CDP Clear presentation redesign
-- [ ] Apply requested palette, slim shell and four compact navigation tabs.
-- [ ] Simplify obligations toolbar/blotter and expandable metadata; preserve fresh samples and manual edits.
-- [ ] Compact netting and add expandable provenance with actionable eligibility errors.
-- [ ] Make settlement register left / selected details and verification right.
-- [ ] Add truthful browser-local chronological activity without changing financial or verification rules.
-- [ ] Test regressions, navigation, persistence and laptop/mobile layouts.
+- [x] Apply requested palette, slim shell and four compact navigation tabs.
+- [x] Simplify obligations toolbar/blotter and expandable metadata; preserve fresh samples and manual edits.
+- [x] Compact netting and add expandable provenance with actionable eligibility errors.
+- [x] Make settlement register left / selected details and verification right.
+- [x] Add truthful browser-local chronological activity without changing financial or verification rules.
+- [x] Test regressions, navigation, persistence and laptop/mobile layouts.
+
+Browser checks: fresh 2000/800/300 samples; 1500 net B→A; edited amount persisted on reload; ineligible trade rejected with a direct affected-trade link; live testnet issuer validation; missing hash yields Exception with no explorer link or network-confirmation event. No overflow at 1440, 800 and 390 pixels; no page errors. A real successful payment was not supplied; matching verification remains covered by controlled test fixtures.
