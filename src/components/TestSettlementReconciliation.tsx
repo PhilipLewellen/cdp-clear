@@ -51,7 +51,7 @@ export function TestSettlementReconciliation({ guided = false }: { guided?: bool
   const result = record.result;
   const ready = /^G[A-Z2-7]{55}$/.test(record.source) && /^G[A-Z2-7]{55}$/.test(record.destination) && /^[a-f0-9]{64}$/.test(record.hash);
   return <section className="settlement-section" aria-label="Retrospective test reconciliation">
-    <div className="module-heading"><h2>Retrospective test reconciliation</h2><span>Phase 4 · Read-only</span></div>
+    <div className="module-heading"><h2>Retrospective test reconciliation</h2><span>Historical · Read-only</span></div>
     <details open={!guided}><summary>{guided ? 'Advanced Details · instruction and exact issuer' : 'Instruction and exact issuer'}</summary><dl className="mt-3 grid grid-cols-[110px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Instruction</dt><dd className="break-all font-mono">{record.id}</dd>
       <dt className="text-muted-foreground">Expected payment</dt><dd className="font-mono">1.0000000 USDC</dd>

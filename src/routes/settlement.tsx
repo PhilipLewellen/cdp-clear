@@ -101,7 +101,7 @@ function Settlement() {
   const selected = rows.find(row => row.id === selectedId);
   return <Shell title="Settlement & Reconciliation" intro="USDC cash-leg operations / NS-AB-001 · Independent testnet verification">
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-2 text-[10px] text-muted-foreground">
-      <span>Separate 1 USDC Test Payment <b className="ml-1 font-normal text-primary">Freighter enabled</b></span><span>Simulated Obligation Payment <b className="ml-1 font-normal text-warning">External only</b></span><span>Testnet Transaction Verification <b className="ml-1 font-normal text-primary">Implemented</b></span>
+      <span>Scaled Testnet Payment <b className="ml-1 font-normal text-primary">Freighter · Demo Workflow</b></span><span>Simulated Obligation Payment <b className="ml-1 font-normal text-warning">External only</b></span><span>Testnet Transaction Verification <b className="ml-1 font-normal text-primary">Implemented</b></span>
     </div>
     <div className="settlement-workspace">
       <div className="settlement-side">
@@ -129,12 +129,6 @@ function Settlement() {
       </section>
       </div>
       <div className="settlement-side">
-        <details className="settlement-section"><summary className="text-sm font-medium">Historical Test Tools</summary>
-          <p className="mb-4 mt-3 text-xs text-muted-foreground">The standalone 1 USDC Testnet payment and its reconciliation record from development. Unrelated to the scaled settlement workflow; all hashes, records and audit events are preserved.</p>
-          <TestSettlementReconciliation />
-          <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
-        </details>
-        <WalletSettlementAsset refreshVersion={balanceRefresh} amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
         {selected && selected.id !== instruction?.id ? <section className="settlement-section"><div className="module-heading"><h2>Reconciled instruction</h2><span>{selected.id}</span></div><dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-sm"><Row label="Amount" value={`${selected.amount.toFixed(2)} USDC`} /><Row label="USD obligation" value={fmt(selected.amount, selected.currency)} /><Row label="Exact issuer" value={selected.assetIssuer} /><Row label="Source wallet" value={selected.source} /><Row label="Beneficiary wallet" value={selected.destination} /><Row label="Network" value={NETWORK} /><Row label="State" value={selected.status} /><Row label="Transaction hash" value={selected.txHash} /></dl>{selected.confirmedAt && <a className="mt-4 inline-block text-xs text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${selected.txHash}`} target="_blank" rel="noreferrer">Inspect on Stellar Expert (testnet) ↗</a>}<Button className="mt-4" variant="outline" onClick={() => setSelectedId(null)}>Return to current instruction</Button></section> : <>
       <section className="settlement-section">
         <div className="module-heading"><h2>{instruction ? 'Selected net settlement instruction' : 'Generate net settlement instruction'}</h2><span>{instruction?.id ?? 'New instruction'}</span></div>
@@ -164,6 +158,14 @@ function Settlement() {
         </> : <div className="border-y border-border py-5 text-xs text-muted-foreground">Create and validate an instruction above before external payment.</div>}
         
       </section>        </>}
+        <details className="settlement-section"><summary className="text-sm font-medium">Wallet diagnostics · Testnet balances and trustlines</summary><div className="mt-3">
+        <WalletSettlementAsset refreshVersion={balanceRefresh} amount={selected?.amount ?? displayedAmount} source={selected?.source ?? instruction?.source ?? form.source} beneficiary={selected?.destination ?? instruction?.destination ?? form.destination} issuer={selected?.assetIssuer ?? instruction?.assetIssuer ?? form.assetIssuer} {...(!instruction && !selected ? { onBeneficiaryChange: (destination: string) => setForm(value => ({ ...value, destination })), onUsePayer: (source: string) => setForm(value => ({ ...value, source })) } : {})} />
+        </div></details>
+        <details className="settlement-section"><summary className="text-sm font-medium">Historical Test Tools</summary>
+          <p className="mb-4 mt-3 text-xs text-muted-foreground">The standalone 1 USDC Testnet payment and its reconciliation record from development. Unrelated to the scaled settlement workflow; all hashes, records and audit events are preserved.</p>
+          <TestSettlementReconciliation />
+          <TestSettlementPayment onSuccess={() => setBalanceRefresh(value => value + 1)} />
+        </details>
       </div>
     </div>
     <details className="border-y border-border p-4"><summary>System Details</summary><p className="mt-3 text-xs text-muted-foreground">Public Horizon Stellar Testnet verification checks success, exact asset issuer, amount, payer and beneficiary. Simulated-obligation payment remains external; the separate 1 USDC Freighter test payment never changes instruction state; Supplying a hash records only a local verification request; no submission is claimed. Asset matching does not attest Circle authenticity or reserves. Browser-local records are not shared across users.</p></details>
