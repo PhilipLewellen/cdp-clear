@@ -7,7 +7,7 @@ import { DEFAULT_ISSUER } from '@/lib/stellar';
 import { inputCls } from '@/lib/ui-classes';
 import { verifyExistingTestPayment, type TestSettlement } from '@/lib/test-reconciliation';
 
-export function TestSettlementReconciliation() {
+export function TestSettlementReconciliation({ guided = false }: { guided?: boolean } = {}) {
   const { testSettlement: record, setTestSettlement, history, instruction } = useStore();
   const [busy, setBusy] = useState(false);
   const guard = useRef(false);
@@ -52,12 +52,12 @@ export function TestSettlementReconciliation() {
   const ready = /^G[A-Z2-7]{55}$/.test(record.source) && /^G[A-Z2-7]{55}$/.test(record.destination) && /^[a-f0-9]{64}$/.test(record.hash);
   return <section className="settlement-section" aria-label="Retrospective test reconciliation">
     <div className="module-heading"><h2>Retrospective test reconciliation</h2><span>Phase 4 · Read-only</span></div>
-    <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-2 text-xs">
+    <details open={!guided}><summary>{guided ? 'Advanced Details · instruction and exact issuer' : 'Instruction and exact issuer'}</summary><dl className="mt-3 grid grid-cols-[110px_minmax(0,1fr)] gap-2 text-xs">
       <dt className="text-muted-foreground">Instruction</dt><dd className="break-all font-mono">{record.id}</dd>
       <dt className="text-muted-foreground">Expected payment</dt><dd className="font-mono">1.0000000 USDC</dd>
       <dt className="text-muted-foreground">Network</dt><dd>Stellar Testnet</dd>
       <dt className="text-muted-foreground">Exact issuer</dt><dd className="break-all font-mono">{DEFAULT_ISSUER}</dd>
-    </dl>
+    </dl></details>
     <div className="mt-4 space-y-3">
       <label className="block text-xs text-muted-foreground">Expected sender public address<input aria-label="Expected sender public address" className={`${inputCls} mt-1`} value={record.source} disabled={busy} onChange={event => edit('source', event.target.value)} /></label>
       <label className="block text-xs text-muted-foreground">Expected recipient public address<input aria-label="Expected recipient public address" className={`${inputCls} mt-1`} value={record.destination} disabled={busy} onChange={event => edit('destination', event.target.value)} /></label>
@@ -69,10 +69,10 @@ export function TestSettlementReconciliation() {
     {result && <>
       {result.reasons.length > 0 && <p role="alert" className="mt-2 text-xs text-destructive">{result.reasons.join(' ')}</p>}
       <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-xs">{Object.entries({ sender: 'Sender match', recipient: 'Recipient match', amount: 'Amount match', asset: 'Asset and issuer match', confirmed: 'Blockchain transaction confirmed', membership: 'Successful payment in this transaction' }).map(([key, label]) => <div className="contents" key={key}><dt className="text-muted-foreground">{label}</dt><dd>{result.checks[key as keyof typeof result.checks] ? 'Verified' : result.status === 'Verification unavailable' ? 'Unavailable' : 'Not matched'}</dd></div>)}</dl>
-      <div className="mt-4 border-y border-border py-3"><h3 className="text-xs font-medium">Actual on-chain payment operations</h3>{result.payments.length === 0 ? <p className="mt-2 text-xs text-muted-foreground">No payment data retrieved.</p> : result.payments.map(payment => <dl key={payment.id} className="mt-3 grid grid-cols-[80px_minmax(0,1fr)] gap-2 text-xs"><dt>Operation</dt><dd className="break-all font-mono">{payment.id}</dd><dt>Amount</dt><dd className="break-all font-mono">{payment.amount} {payment.asset_code ?? 'XLM'}</dd><dt>Sender</dt><dd className="break-all font-mono">{payment.from}</dd><dt>Recipient</dt><dd className="break-all font-mono">{payment.to}</dd><dt>Issuer</dt><dd className="break-all font-mono">{payment.asset_issuer ?? 'Native asset'}</dd></dl>)}</div>
+      <details open={!guided} className="mt-4 border-y border-border py-3"><summary>Advanced Details · actual on-chain payment operations</summary>{result.payments.length === 0 ? <p className="mt-2 text-xs text-muted-foreground">No payment data retrieved.</p> : result.payments.map(payment => <dl key={payment.id} className="mt-3 grid grid-cols-[80px_minmax(0,1fr)] gap-2 text-xs"><dt>Operation</dt><dd className="break-all font-mono">{payment.id}</dd><dt>Amount</dt><dd className="break-all font-mono">{payment.amount} {payment.asset_code ?? 'XLM'}</dd><dt>Sender</dt><dd className="break-all font-mono">{payment.from}</dd><dt>Recipient</dt><dd className="break-all font-mono">{payment.to}</dd><dt>Issuer</dt><dd className="break-all font-mono">{payment.asset_issuer ?? 'Native asset'}</dd></dl>)}</details>
       {result.confirmedAt && <div className="mt-3 text-xs"><p>Blockchain confirmation: <span className="font-mono">{result.confirmedAt}</span></p><p className="mt-1">Latest verification: <span className="font-mono">{result.checkedAt}</span></p><p className="mt-2 break-all font-mono">{record.hash}</p><a className="mt-2 inline-block text-primary underline" href={`https://stellar.expert/explorer/testnet/tx/${record.hash}`} target="_blank" rel="noreferrer">Inspect existing transaction on Stellar Expert ↗</a></div>}
     </>}
-    <details className="mt-4 text-xs" open={Boolean(result)}><summary className="cursor-pointer text-muted-foreground">Test settlement audit trail · {record.audit.length} events</summary><ol className="mt-3 space-y-3">{record.audit.map((event, index) => <li key={index}><p>{event.action}</p><p className="mt-1 font-mono text-muted-foreground">{event.at}</p><p className="mt-1 break-all text-muted-foreground">{event.detail}</p></li>)}</ol></details>
+    <details className="mt-4 text-xs" open={!guided && Boolean(result)}><summary className="cursor-pointer text-muted-foreground">{guided ? 'Advanced Details · ' : ''}Test settlement audit trail · {record.audit.length} events</summary><ol className="mt-3 space-y-3">{record.audit.map((event, index) => <li key={index}><p>{event.action}</p><p className="mt-1 font-mono text-muted-foreground">{event.at}</p><p className="mt-1 break-all text-muted-foreground">{event.detail}</p></li>)}</ol></details>
     <p className="mt-4 text-[10px] text-muted-foreground">Separate technical demonstration. No new payment or signature. Does not settle the illustrative $1,500 net obligation or legally discharge any compute derivatives contract. Browser-local allocation register.</p>
   </section>;
 }

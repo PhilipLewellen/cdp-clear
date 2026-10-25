@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as NettingRouteImport } from './routes/netting'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as SettlementRouteImport } from './routes/settlement'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NettingRoute = NettingRouteImport.update({
@@ -44,6 +50,7 @@ const SettlementRoute = SettlementRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/demo': typeof DemoRoute
   '/netting': typeof NettingRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/demo': typeof DemoRoute
   '/netting': typeof NettingRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
@@ -59,21 +67,31 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/demo': typeof DemoRoute
   '/netting': typeof NettingRoute
   '/overview': typeof OverviewRoute
   '/settlement': typeof SettlementRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/activity' | '/netting' | '/overview' | '/settlement'
+  fullPaths:
+    '/' | '/activity' | '/demo' | '/netting' | '/overview' | '/settlement'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/activity' | '/netting' | '/overview' | '/settlement'
-  id: '__root__' | '/' | '/activity' | '/netting' | '/overview' | '/settlement'
+  to: '/' | '/activity' | '/demo' | '/netting' | '/overview' | '/settlement'
+  id:
+    | '__root__'
+    | '/'
+    | '/activity'
+    | '/demo'
+    | '/netting'
+    | '/overview'
+    | '/settlement'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
+  DemoRoute: typeof DemoRoute
   NettingRoute: typeof NettingRoute
   OverviewRoute: typeof OverviewRoute
   SettlementRoute: typeof SettlementRoute
@@ -93,6 +111,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/netting': {
@@ -122,6 +147,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
+  DemoRoute: DemoRoute,
   NettingRoute: NettingRoute,
   OverviewRoute: OverviewRoute,
   SettlementRoute: SettlementRoute,

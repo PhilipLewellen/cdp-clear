@@ -7,6 +7,7 @@ import { Info, RotateCcw } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
 
 const tabs = [
+  { to: "/demo", label: "Demo Workflow" },
   { to: "/overview", label: "Overview" },
   { to: "/", label: "Obligations" },
   { to: "/netting", label: "Netting" },
@@ -20,13 +21,13 @@ export function Shell({ title, intro, children }: { title: string; intro: string
     <div className="workstation min-h-screen">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <span className="font-display text-base font-semibold">CDP Clear</span>
+          <Button asChild variant="ghost" className="px-0 font-display text-base font-semibold"><Link to="/demo">CDP Clear</Link></Button>
           <div className="flex flex-wrap items-center justify-end gap-3"><span className="text-[11px] text-muted-foreground">STELLAR TESTNET <span className="mx-2 text-border">/</span> USDC <span className="mx-2 text-border">/</span> <b className="font-medium text-warning">DEMO · NO REAL FUNDS</b></span><WalletConnect /></div>
         </div>
       </header>
       <nav aria-label="Operations workflow" className="border-b border-border">
         <div className="mx-auto flex max-w-[1480px] gap-1 overflow-x-auto px-4 sm:px-6">
-          {tabs.map(t => <Button key={t.to} asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={t.to} className="text-muted-foreground" activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{t.label}</Link></Button>)}
+            {tabs.map(t => <Button key={t.to} asChild variant="ghost" className="!h-10 !rounded-none border-b-2 border-transparent px-3"><Link to={t.to} className={t.to === '/demo' ? 'text-primary font-semibold' : 'text-muted-foreground'} activeProps={{ className: "!border-primary !text-primary bg-card" }} activeOptions={{ exact: true }}>{t.label}</Link></Button>)}
         </div>
       </nav>
       <main className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6">
